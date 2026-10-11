@@ -1,26 +1,53 @@
-import { useLiveQuery } from 'dexie-react-hooks'
-import { db } from './db/db'
+import { useState, type ReactNode } from 'react'
+import { isStandalone } from './lib/standalone'
+import { tabOf, useRoute, type Route } from './router'
+import { InstallScreen } from './screens/InstallScreen'
+import { MedicationDetailScreen } from './screens/MedicationDetailScreen'
+import { MedicationsScreen } from './screens/MedicationsScreen'
+import { PlaceholderScreen } from './screens/PlaceholderScreen'
+import { TodayScreen } from './screens/TodayScreen'
+import { FeedbackProvider } from './ui/feedback'
+import { TabBar } from './ui/layout'
 
 export default function App() {
-  const counts = useLiveQuery(async () => ({
-    medications: await db.medications.count(),
-    effects: await db.effects.count(),
-  }))
+  // In development, `?browser` in the URL skips the install screen (for testing in a desktop browser).
+  const [devBypass, setDevBypass] = useState(() => import.meta.env.DEV && new URLSearchParams(location.search).has('browser'))
+
+  // Logging only works in the installed app (see InstallScreen).
+  if (!isStandalone() && !devBypass) {
+    return <InstallScreen onContinueDev={import.meta.env.DEV ? () => setDevBypass(true) : undefined} />
+  }
 
   return (
-    <main className="pt-safe px-5">
-      <h1 className="text-2xl font-semibold">MedLog</h1>
-      <p className="text-muted">
-        {counts ? `${counts.medications} medications, ${counts.effects} effects` : 'Loading…'}
-      </p>
-      {import.meta.env.DEV && (
-        <button
-          className="mt-4 min-h-11 rounded-2xl bg-accent px-4 text-accent-ink"
-          onClick={async () => (await import('./dev/sampleData')).loadSampleData()}
-        >
-          Load sample data
-        </button>
-      )}
-    </main>
+    <FeedbackProvider>
+      <Shell />
+    </FeedbackProvider>
   )
+}
+
+function Shell() {
+  const route = useRoute()
+  return (
+    <>
+      <div key={routeKey(route)}>{screenFor(route)}</div>
+      <TabBar active={tabOf(route)} />
+    </>
+  )
+}
+
+function routeKey(route: Route) {
+  return 'id' in route ? `${route.name}/${route.id}` : route.name
+}
+
+function screenFor(route: Route): ReactNode {
+  switch (route.name) {
+    case 'today':
+      return <TodayScreen />
+    case 'medications':
+      return <MedicationsScreen />
+    case 'medication':
+      return <MedicationDetailScreen id={route.id} />
+    default:
+      return <PlaceholderScreen route={route} />
+  }
 }

@@ -68,6 +68,7 @@
   --ease-calm: cubic-bezier(0.22, 0.8, 0.24, 1);
 }
 
+@layer base {
 html,
 body,
 #root {
@@ -106,6 +107,7 @@ select {
 button {
   cursor: pointer;
   touch-action: manipulation;
+}
 }
 
 .pt-safe {
@@ -160,6 +162,7 @@ button {
   }
 }
 
+@layer base {
 /* Range sliders: large, soft thumb. */
 input[type='range'] {
   -webkit-appearance: none;
@@ -194,6 +197,7 @@ input[type='range']::-moz-range-thumb {
   border-radius: 999px;
   background: var(--accent);
   border: 3px solid var(--surface);
+}
 }
 
 @media print {
