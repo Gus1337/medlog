@@ -98,4 +98,24 @@ Project layout:
 
 MedLog is a static site: `npm run build` produces `dist/`, which any HTTPS static host can serve. The build reads `BASE_PATH` when the site lives under a subpath (for example `BASE_PATH=/medlog/` for `https://you.github.io/medlog/`).
 
-<!-- DEPLOY-STEPS -->
+### GitHub Pages (how MedLog is deployed)
+
+`.github/workflows/deploy.yml` runs the tests, builds with `BASE_PATH=/<repository name>/`, and publishes `dist/` to GitHub Pages on every push to `main`. The site is then at `https://<your-username>.github.io/<repository name>/`.
+
+First-time setup with the GitHub CLI:
+
+```sh
+brew install gh                 # if it isn't installed
+gh auth login                   # GitHub.com → HTTPS → log in with a web browser
+gh repo create medlog --public --source . --push
+gh api -X POST repos/{owner}/medlog/pages -f build_type=workflow   # turn on Pages, source: GitHub Actions
+gh run watch                    # follow the first deployment
+```
+
+Or on github.com: create an empty repository, then run `git remote add origin https://github.com/<you>/<repo>.git` and `git push -u origin main`. Then go to the repository's **Settings → Pages** and set **Source** to **GitHub Actions**.
+
+GitHub Pages on a free account needs a public repository. That only exposes the code: your data stays on your phone and the repository contains no keys or personal data.
+
+**Updating:** commit and `git push`. The workflow redeploys, and the installed app picks up the new version the next time you close and reopen it.
+
+**Moving to a different address loses access to the data.** iOS ties a Home Screen app's storage to its web address. If the repository is renamed or you switch hosts, back up first, install from the new address, and restore the backup there.
