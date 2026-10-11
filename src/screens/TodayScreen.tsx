@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
+import { CheckInCard } from '../components/CheckInCard'
 import { useEntryEditor } from '../components/EntryEditor'
 import { MedicationCard } from '../components/MedicationCard'
 import { MedicationForm } from '../components/MedicationForm'
 import { buildTimeline, Timeline, type TimelineContext } from '../components/Timeline'
 import { useActiveMedications, useDoseLogs, useEffects, useMedications, useNotes, useTags } from '../data/hooks'
-import { addDays, DAY, startOfDay } from '../lib/time'
+import { addDays, DAY, dayKey, startOfDay } from '../lib/time'
 import { indexDoseLogs } from '../lib/timeSinceDose'
 import { useNow } from '../lib/useNow'
 import { Icon } from '../ui/Icon'
@@ -85,6 +86,10 @@ export function TodayScreen() {
         ) : (
           <Timeline items={items} ctx={ctx} onSelect={editor.edit} />
         )}
+
+        <div className="mt-8">
+          <CheckInCard date={dayKey(now)} />
+        </div>
       </Page>
 
       {editor.sheet}

@@ -13,9 +13,10 @@
   --accent: #6f8f7a;
   --accent-soft: #dfe7df;
   --accent-ink: #f8f7f3;
-  --good: #7f9f86;
-  --neutral: #aaa49b;
-  --bad: #c0907f;
+  /* Feel colours, checked for colour-blind separation (teal / warm grey / amber). */
+  --good: #2f8a84;
+  --neutral: #b8b1a6;
+  --bad: #c47a45;
   --med-sage: #7c9a84;
   --med-slate: #7d8fa3;
   --med-sand: #b7a07c;
@@ -37,9 +38,9 @@
     --accent: #8fae98;
     --accent-soft: #2c3830;
     --accent-ink: #18201b;
-    --good: #8fb096;
-    --neutral: #9b968f;
-    --bad: #c99a8a;
+    --good: #5fb3aa;
+    --neutral: #7d7870;
+    --bad: #de9a66;
     --med-sage: #8fae98;
     --med-slate: #93a6ba;
     --med-sand: #c9b48f;
@@ -174,7 +175,7 @@ input[type='range'] {
 input[type='range']::-webkit-slider-runnable-track {
   height: 6px;
   border-radius: 999px;
-  background: var(--surface-2);
+  background: var(--border);
 }
 input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
@@ -189,7 +190,7 @@ input[type='range']::-webkit-slider-thumb {
 input[type='range']::-moz-range-track {
   height: 6px;
   border-radius: 999px;
-  background: var(--surface-2);
+  background: var(--border);
 }
 input[type='range']::-moz-range-thumb {
   width: 24px;

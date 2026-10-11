@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { isStandalone } from './lib/standalone'
 import { tabOf, useRoute, type Route } from './router'
 import { HistoryScreen } from './screens/HistoryScreen'
+import { InsightsScreen } from './screens/InsightsScreen'
 import { InstallScreen } from './screens/InstallScreen'
 import { MedicationDetailScreen } from './screens/MedicationDetailScreen'
 import { MedicationsScreen } from './screens/MedicationsScreen'
@@ -46,6 +47,8 @@ function screenFor(route: Route): ReactNode {
       return <TodayScreen />
     case 'history':
       return <HistoryScreen />
+    case 'insights':
+      return <InsightsScreen />
     case 'medications':
       return <MedicationsScreen />
     case 'medication':

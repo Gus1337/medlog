@@ -22,6 +22,7 @@ export interface ThemeColours {
   muted: string
   faint: string
   border: string
+  surface: string
   surface2: string
   accent: string
   feel: Record<Feel, string>
@@ -36,6 +37,7 @@ function read(): ThemeColours {
     muted: v('--muted'),
     faint: v('--faint'),
     border: v('--border'),
+    surface: v('--surface'),
     surface2: v('--surface-2'),
     accent: v('--accent'),
     feel: { good: v('--good'), neutral: v('--neutral'), bad: v('--bad') },

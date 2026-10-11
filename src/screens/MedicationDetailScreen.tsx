@@ -1,5 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useMemo, useState } from 'react'
+import { AfterDoseChart } from '../components/charts/AfterDoseChart'
+import { EffectBreakdown } from '../components/charts/EffectBreakdown'
 import { useEntryEditor } from '../components/EntryEditor'
 import { LinkedEffects } from '../components/LinkedEffects'
 import { MedicationForm } from '../components/MedicationForm'
@@ -29,6 +31,11 @@ export function MedicationDetailScreen({ id }: { id: string }) {
   const effects = useLiveQuery(() => db.effects.where('medicationIds').equals(id).toArray(), [id])
   const notes = useLiveQuery(() => db.notes.where('medicationId').equals(id).reverse().sortBy('createdAt'), [id])
   const tags = useTags()
+  // Recent effects of any kind, so the after-dose graph can include "not sure" entries.
+  const recentEffects = useLiveQuery(
+    () => db.effects.where('timestamp').aboveOrEqual(addDays(startOfDay(Date.now()), -84)).toArray(),
+    [],
+  )
   const editor = useEntryEditor(meds)
   const ctx: TimelineContext = useMemo(
     () => ({ medications: meds ?? [], tags: tags ?? [], doseIndex: indexDoseLogs(doseLogs ?? []) }),
@@ -114,6 +121,16 @@ export function MedicationDetailScreen({ id }: { id: string }) {
           </ol>
         ) : (
           <EmptyState title="No dose changes yet">When you edit the dose, the change is recorded here with its date.</EmptyState>
+        )}
+
+        {recentEffects && tags && doseLogs && (
+          <>
+            <SectionTitle>Last 12 weeks</SectionTitle>
+            <div className="space-y-4">
+              <AfterDoseChart medication={med} effects={recentEffects} doseLogs={doseLogs} tags={tags} />
+              <EffectBreakdown medication={med} effects={recentEffects} tags={tags} />
+            </div>
+          </>
         )}
 
         <SectionTitle>Effects linked to {med.name}</SectionTitle>
