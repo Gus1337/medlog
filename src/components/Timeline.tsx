@@ -1,4 +1,4 @@
-import type { CheckIn, DoseLog, EffectEntry, Medication, Note, Tag } from '../db/types'
+import type { DoseLog, EffectEntry, Medication, Note, Tag } from '../db/types'
 import { formatTime } from '../lib/time'
 import { describeSinceDose, sinceDoseForMedication, type SinceDose } from '../lib/timeSinceDose'
 import { FEEL_LABELS, feelColour, medColour } from '../ui/colours'
@@ -8,19 +8,16 @@ export type TimelineItem =
   | { kind: 'dose'; at: number; log: DoseLog }
   | { kind: 'effect'; at: number; entry: EffectEntry }
   | { kind: 'note'; at: number; note: Note }
-  | { kind: 'checkin'; at: number; checkIn: CheckIn }
 
 export function buildTimeline(parts: {
   doseLogs?: DoseLog[]
   effects?: EffectEntry[]
   notes?: Note[]
-  checkIns?: { checkIn: CheckIn; at: number }[]
 }): TimelineItem[] {
   const items: TimelineItem[] = [
     ...(parts.doseLogs ?? []).map((log) => ({ kind: 'dose' as const, at: log.timestamp, log })),
     ...(parts.effects ?? []).map((entry) => ({ kind: 'effect' as const, at: entry.timestamp, entry })),
     ...(parts.notes ?? []).map((note) => ({ kind: 'note' as const, at: note.createdAt, note })),
-    ...(parts.checkIns ?? []).map(({ checkIn, at }) => ({ kind: 'checkin' as const, at, checkIn })),
   ]
   return items.sort((a, b) => a.at - b.at)
 }
@@ -82,8 +79,6 @@ function keyOf(item: TimelineItem) {
       return item.entry.id
     case 'note':
       return item.note.id
-    case 'checkin':
-      return item.checkIn.id
   }
 }
 
@@ -129,20 +124,6 @@ function ItemBody({ item, ctx }: { item: TimelineItem; ctx: TimelineContext }) {
         </div>
       )
     }
-    case 'checkin': {
-      const c = item.checkIn
-      return (
-        <div>
-          <div className="mb-1 flex items-center gap-1.5 text-sm text-muted">
-            <Icon name="moon" size={16} />
-            Evening check-in
-          </div>
-          <p className="text-[15px]">
-            Focus {c.focus} · Anxiety {c.anxiety} · Mood {c.mood} · Sleep {c.sleep}
-          </p>
-        </div>
-      )
-    }
   }
 }
 
@@ -170,8 +151,20 @@ export function EffectBody({ entry, ctx }: { entry: EffectEntry; ctx: TimelineCo
           ))}
       </div>
       <p className="mt-1.5 text-[13px] text-muted">
-        {meds.length === 0 ? 'Not sure which medication' : meds.map((m) => m.name).join(' + ')}
-        {since.length > 0 && <> · {since.map((s) => describeSinceDose(s, ctx.medications)).join(', ')}</>}
+        {meds.length === 0 ? (
+          <>
+            Not sure which medication
+            {since.length > 0 && <> · {since.map((s) => describeSinceDose(s, ctx.medications)).join(', ')}</>}
+          </>
+        ) : (
+          // Linked: "2h 10m after X", or just the name when there was no dose in the previous 24 hours.
+          meds
+            .map((m) => {
+              const s = since.find((x) => x.medicationId === m.id)
+              return s ? describeSinceDose(s, ctx.medications) : m.name
+            })
+            .join(' · ')
+        )}
       </p>
     </div>
   )

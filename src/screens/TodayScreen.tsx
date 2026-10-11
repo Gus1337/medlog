@@ -1,13 +1,13 @@
 import { useMemo, useState } from 'react'
-import { DoseEditSheet } from '../components/DoseEditSheet'
+import { useEntryEditor } from '../components/EntryEditor'
 import { MedicationCard } from '../components/MedicationCard'
 import { MedicationForm } from '../components/MedicationForm'
-import { buildTimeline, Timeline, type TimelineContext, type TimelineItem } from '../components/Timeline'
-import { useActiveMedications, useDoseLogs, useMedications, useTags } from '../data/hooks'
-import type { DoseLog } from '../db/types'
+import { buildTimeline, Timeline, type TimelineContext } from '../components/Timeline'
+import { useActiveMedications, useDoseLogs, useEffects, useMedications, useNotes, useTags } from '../data/hooks'
 import { addDays, DAY, startOfDay } from '../lib/time'
 import { indexDoseLogs } from '../lib/timeSinceDose'
 import { useNow } from '../lib/useNow'
+import { Icon } from '../ui/Icon'
 import { Page, ScreenHeader } from '../ui/layout'
 import { Button, EmptyState, SectionTitle } from '../ui/primitives'
 
@@ -21,8 +21,10 @@ export function TodayScreen() {
   const tags = useTags()
   // Include the previous 24 hours so "time since dose" works early in the day.
   const doseLogs = useDoseLogs(dayStart - DAY, dayEnd)
+  const effects = useEffects(dayStart, dayEnd)
+  const notes = useNotes(dayStart, dayEnd)
 
-  const [editingLog, setEditingLog] = useState<DoseLog | null>(null)
+  const editor = useEntryEditor(allMeds)
   const [addingMed, setAddingMed] = useState(false)
 
   const todayLogs = useMemo(() => (doseLogs ?? []).filter((l) => l.timestamp >= dayStart), [doseLogs, dayStart])
@@ -30,11 +32,7 @@ export function TodayScreen() {
     () => ({ medications: allMeds ?? [], tags: tags ?? [], doseIndex: indexDoseLogs(doseLogs ?? []) }),
     [allMeds, tags, doseLogs],
   )
-  const items = useMemo(() => buildTimeline({ doseLogs: todayLogs }), [todayLogs])
-
-  const select = (item: TimelineItem) => {
-    if (item.kind === 'dose') setEditingLog(item.log)
-  }
+  const items = useMemo(() => buildTimeline({ doseLogs: todayLogs, effects, notes }), [todayLogs, effects, notes])
 
   if (!meds) return null
 
@@ -59,27 +57,37 @@ export function TodayScreen() {
                 key={m.id}
                 medication={m}
                 todayLogs={todayLogs.filter((l) => l.medicationId === m.id)}
-                onEditLog={setEditingLog}
+                onEditLog={editor.editDose}
               />
             ))}
           </div>
         )}
 
-        <SectionTitle>Today so far</SectionTitle>
+        <button
+          type="button"
+          onClick={editor.newEffect}
+          className="mt-5 flex min-h-20 w-full items-center justify-center gap-3 rounded-3xl bg-accent-soft text-lg font-semibold text-ink transition-transform duration-300 active:scale-[0.99]"
+        >
+          <Icon name="sparkle" size={24} className="text-accent" />I noticed something
+        </button>
+
+        <SectionTitle
+          action={
+            <Button variant="ghost" icon="note" className="-mr-2 text-[15px]" onClick={() => editor.newNote()}>
+              Add note
+            </Button>
+          }
+        >
+          Today so far
+        </SectionTitle>
         {items.length === 0 ? (
           <EmptyState title="Nothing logged yet today">Doses and the effects you notice will line up here in time order.</EmptyState>
         ) : (
-          <Timeline items={items} ctx={ctx} onSelect={select} />
+          <Timeline items={items} ctx={ctx} onSelect={editor.edit} />
         )}
       </Page>
 
-      {editingLog && (
-        <DoseEditSheet
-          log={editingLog}
-          medication={allMeds?.find((m) => m.id === editingLog.medicationId)}
-          onClose={() => setEditingLog(null)}
-        />
-      )}
+      {editor.sheet}
       {addingMed && <MedicationForm onClose={() => setAddingMed(false)} usedColours={allMeds?.map((m) => m.colour)} />}
     </>
   )

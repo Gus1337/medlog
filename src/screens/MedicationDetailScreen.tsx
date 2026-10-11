@@ -1,12 +1,17 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useEntryEditor } from '../components/EntryEditor'
+import { LinkedEffects } from '../components/LinkedEffects'
 import { MedicationForm } from '../components/MedicationForm'
+import type { TimelineContext } from '../components/Timeline'
 import { setArchived } from '../data/medications'
-import { useMedications } from '../data/hooks'
+import { useMedications, useTags } from '../data/hooks'
 import { db } from '../db/db'
 import { addDays, formatDateTime, formatShortDate, startOfDay } from '../lib/time'
+import { indexDoseLogs } from '../lib/timeSinceDose'
 import { goBack } from '../router'
 import { medColour } from '../ui/colours'
+import { Icon } from '../ui/Icon'
 import { useFeedback } from '../ui/feedback'
 import { Page, ScreenHeader } from '../ui/layout'
 import { Button, Card, EmptyState, SectionTitle } from '../ui/primitives'
@@ -19,9 +24,15 @@ export function MedicationDetailScreen({ id }: { id: string }) {
 
   const changes = useLiveQuery(() => db.doseChanges.where('medicationId').equals(id).sortBy('date'), [id])
   const since = addDays(startOfDay(Date.now()), -13)
-  const recent = useLiveQuery(
-    async () => (await db.doseLogs.where('medicationId').equals(id).toArray()).filter((l) => l.timestamp >= since),
-    [id, since],
+  const doseLogs = useLiveQuery(() => db.doseLogs.where('medicationId').equals(id).toArray(), [id])
+  const recent = doseLogs?.filter((l) => l.timestamp >= since)
+  const effects = useLiveQuery(() => db.effects.where('medicationIds').equals(id).toArray(), [id])
+  const notes = useLiveQuery(() => db.notes.where('medicationId').equals(id).reverse().sortBy('createdAt'), [id])
+  const tags = useTags()
+  const editor = useEntryEditor(meds)
+  const ctx: TimelineContext = useMemo(
+    () => ({ medications: meds ?? [], tags: tags ?? [], doseIndex: indexDoseLogs(doseLogs ?? []) }),
+    [meds, tags, doseLogs],
   )
 
   if (!meds) return null
@@ -104,8 +115,51 @@ export function MedicationDetailScreen({ id }: { id: string }) {
         ) : (
           <EmptyState title="No dose changes yet">When you edit the dose, the change is recorded here with its date.</EmptyState>
         )}
+
+        <SectionTitle>Effects linked to {med.name}</SectionTitle>
+        {effects && effects.length > 0 ? (
+          <LinkedEffects entries={effects} ctx={ctx} onSelect={(entry) => editor.edit({ kind: 'effect', at: entry.timestamp, entry })} />
+        ) : (
+          <EmptyState title="No linked effects yet">
+            When you log something you noticed and pick {med.name}, it is grouped here by tag.
+          </EmptyState>
+        )}
+
+        <SectionTitle
+          action={
+            <Button variant="ghost" icon="plus" className="-mr-2 text-[15px]" onClick={() => editor.newNote(med.id)}>
+              Add note
+            </Button>
+          }
+        >
+          Notes
+        </SectionTitle>
+        {notes && notes.length > 0 ? (
+          <ul className="space-y-2">
+            {notes.map((n) => (
+              <li key={n.id}>
+                <button
+                  type="button"
+                  onClick={() => editor.edit({ kind: 'note', at: n.createdAt, note: n })}
+                  className="w-full rounded-2xl bg-surface px-4 py-3 text-left"
+                >
+                  <p className="mb-1 flex items-center gap-1.5 text-[13px] text-faint">
+                    <Icon name="note" size={14} />
+                    {formatDateTime(n.createdAt)}
+                  </p>
+                  <p className="whitespace-pre-wrap">{n.text}</p>
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <EmptyState title="No notes yet">
+            Longer thoughts about {med.name}, such as what your prescriber said, can be kept here.
+          </EmptyState>
+        )}
       </Page>
       {editing && <MedicationForm medication={med} onClose={() => setEditing(false)} />}
+      {editor.sheet}
     </>
   )
 }
