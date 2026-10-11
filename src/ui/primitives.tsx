@@ -143,3 +143,13 @@ export function Field({ label, children, hint }: { label: string; children: Reac
 
 export const inputClass =
   'w-full min-h-11 rounded-2xl border border-line bg-surface px-4 py-2.5 outline-none transition-colors duration-300 focus:border-accent'
+
+/** A titled settings group. */
+export function SettingsCard({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="animate-fade rounded-3xl bg-surface p-5">
+      <h2 className="mb-3 text-lg font-semibold">{title}</h2>
+      {children}
+    </section>
+  )
+}

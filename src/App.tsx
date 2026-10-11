@@ -1,16 +1,19 @@
-import { useState, type ReactNode } from 'react'
+import { lazy, Suspense, useState, type ReactNode } from 'react'
+import { LockGate } from './components/LockGate'
 import { isStandalone } from './lib/standalone'
 import { tabOf, useRoute, type Route } from './router'
 import { HistoryScreen } from './screens/HistoryScreen'
-import { InsightsScreen } from './screens/InsightsScreen'
 import { InstallScreen } from './screens/InstallScreen'
-import { MedicationDetailScreen } from './screens/MedicationDetailScreen'
 import { MedicationsScreen } from './screens/MedicationsScreen'
 import { SettingsScreen } from './screens/SettingsScreen'
-import { SummaryScreen } from './screens/SummaryScreen'
 import { TodayScreen } from './screens/TodayScreen'
 import { FeedbackProvider } from './ui/feedback'
 import { TabBar } from './ui/layout'
+
+// Screens with graphs load on demand, keeping the charting library out of the first load.
+const InsightsScreen = lazy(() => import('./screens/InsightsScreen').then((m) => ({ default: m.InsightsScreen })))
+const MedicationDetailScreen = lazy(() => import('./screens/MedicationDetailScreen').then((m) => ({ default: m.MedicationDetailScreen })))
+const SummaryScreen = lazy(() => import('./screens/SummaryScreen').then((m) => ({ default: m.SummaryScreen })))
 
 export default function App() {
   // In development, `?browser` in the URL skips the install screen (for testing in a desktop browser).
@@ -23,7 +26,9 @@ export default function App() {
 
   return (
     <FeedbackProvider>
-      <Shell />
+      <LockGate>
+        <Shell />
+      </LockGate>
     </FeedbackProvider>
   )
 }
@@ -32,7 +37,9 @@ function Shell() {
   const route = useRoute()
   return (
     <>
-      <div key={routeKey(route)}>{screenFor(route)}</div>
+      <div key={routeKey(route)}>
+        <Suspense fallback={null}>{screenFor(route)}</Suspense>
+      </div>
       <TabBar active={tabOf(route)} />
     </>
   )

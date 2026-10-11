@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
+import { DataSection, LockSection } from '../components/SettingsPrivacy'
 import { deleteTag, renameTag, tagUsage } from '../data/entries'
 import { useTags } from '../data/hooks'
 import { getApiKey, removeApiKey, setApiKey } from '../data/summaries'
@@ -8,10 +9,10 @@ import { CLAUDE_MODEL_ID } from '../lib/summary/claude'
 import { goBack } from '../router'
 import { useFeedback } from '../ui/feedback'
 import { Page, ScreenHeader } from '../ui/layout'
-import { Button, inputClass } from '../ui/primitives'
+import { Button, inputClass, SettingsCard } from '../ui/primitives'
 import { Sheet } from '../ui/Sheet'
 
-export function SettingsScreen({ extraSections }: { extraSections?: ReactNode }) {
+export function SettingsScreen() {
   return (
     <>
       <ScreenHeader title="Settings" onBack={() => goBack({ name: 'today' })} showSettings={false} />
@@ -19,20 +20,13 @@ export function SettingsScreen({ extraSections }: { extraSections?: ReactNode })
         <div className="space-y-4">
           <AiSection />
           <TagsSection />
-          {extraSections}
+          <LockSection />
+          <DataSection />
           {import.meta.env.DEV && <DevSection />}
         </div>
+        <p className="mt-8 text-center text-[13px] text-faint">MedLog · no account, no analytics, no tracking.</p>
       </Page>
     </>
-  )
-}
-
-export function SettingsCard({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="animate-fade rounded-3xl bg-surface p-5">
-      <h2 className="mb-3 text-lg font-semibold">{title}</h2>
-      {children}
-    </section>
   )
 }
 
