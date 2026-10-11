@@ -127,10 +127,12 @@ export function describeTarget(habit: Habit): string {
 
 /**
  * Reads a typed amount: "10000", "10 000", "10,000" and "10.000" are ten
- * thousand; "2,5" and "2.5" are two and a half. NaN when unreadable.
+ * thousand, as is "10k"; "2,5" and "2.5" are two and a half. NaN when unreadable.
  */
 export function parseAmount(text: string): number {
   const s = text.trim().replace(/\s/g, '')
+  const k = /^(\d+(?:[.,]\d+)?)k$/i.exec(s)
+  if (k) return Math.round(Number(k[1].replace(',', '.')) * 1000)
   if (/^\d{1,3}([.,]\d{3})+$/.test(s)) return Number(s.replace(/[.,]/g, ''))
   if (!/^\d*[.,]?\d+$/.test(s)) return NaN
   return Number(s.replace(',', '.'))

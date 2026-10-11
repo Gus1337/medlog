@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { addHabit, updateHabit, type HabitInput } from '../data/habits'
 import type { Habit, HabitKind } from '../db/types'
 import { parseAmount } from '../lib/habits'
-import { Chip, Field, inputClass, Segmented } from '../ui/primitives'
-import { Sheet } from '../ui/Sheet'
+import { useFeedback } from '../ui/feedback'
+import { Button, Chip, Field, inputClass, Segmented } from '../ui/primitives'
+import { Sheet, useSheetAction } from '../ui/Sheet'
 
 const UNITS = ['steps', 'min', 'pages', 'km', 'glasses', 'times']
 
@@ -23,8 +24,13 @@ export function HabitForm({ habit, onClose, onSaved }: { habit?: Habit; onClose:
   const [daily, setDaily] = useState(habit && habit.kind === 'amount' ? String(habit.dailyTarget) : '')
   const [weekly, setWeekly] = useState(String(habit?.weeklyTarget ?? 5))
 
+  const { toast } = useFeedback()
   const parsedDaily = parseAmount(daily)
-  const valid = name.trim().length > 0 && (kind === 'check' || parsedDaily > 0)
+  const problem = !name.trim()
+    ? 'Give the habit a name.'
+    : kind === 'amount' && !(parsedDaily > 0)
+      ? 'Enter a daily target as a number, such as 10000.'
+      : null
 
   const usePreset = (p: HabitInput) => {
     setName(p.name)
@@ -46,12 +52,15 @@ export function HabitForm({ habit, onClose, onSaved }: { habit?: Habit; onClose:
       await updateHabit(habit.id, input)
       onSaved?.(habit.id)
     } else {
-      onSaved?.(await addHabit(input))
+      // Not `onSaved?.(await addHabit(...))`: an optional call skips its arguments when onSaved is missing.
+      const id = await addHabit(input)
+      toast(`${input.name} added`)
+      onSaved?.(id)
     }
   }
 
   return (
-    <Sheet title={habit ? 'Edit habit' : 'New habit'} onClose={onClose} actionLabel="Save" onAction={save} actionDisabled={!valid}>
+    <Sheet title={habit ? 'Edit habit' : 'New habit'} onClose={onClose} actionLabel="Save" onAction={save} actionDisabled={!!problem}>
       <div className="space-y-5 pt-2">
         {!habit && (
           <div className="flex flex-wrap gap-2">
@@ -102,7 +111,22 @@ export function HabitForm({ habit, onClose, onSaved }: { habit?: Habit; onClose:
             {kind === 'amount' ? 'A day counts when you reach the daily target.' : 'A day counts when you mark it done.'}
           </span>
         </div>
+
+        <FormFooter problem={problem} label={habit ? 'Save changes' : 'Add habit'} />
       </div>
     </Sheet>
+  )
+}
+
+/** A full-width button at the end of the form, doing the same as Save, with the reason when it can't be used yet. */
+function FormFooter({ problem, label }: { problem: string | null; label: string }) {
+  const act = useSheetAction()
+  return (
+    <div className="pb-4 pt-2">
+      {problem && <p className="mb-2 text-[15px] text-muted">{problem}</p>}
+      <Button variant="primary" className="w-full" disabled={!!problem} onClick={act}>
+        {label}
+      </Button>
+    </div>
   )
 }

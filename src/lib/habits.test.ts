@@ -100,6 +100,8 @@ describe('parseAmount', () => {
     expect(parseAmount('10 000')).toBe(10000)
     expect(parseAmount('10,000')).toBe(10000)
     expect(parseAmount('10.000')).toBe(10000)
+    expect(parseAmount('10k')).toBe(10000)
+    expect(parseAmount('7.5K')).toBe(7500)
     expect(parseAmount('2,5')).toBe(2.5)
     expect(parseAmount('2.5')).toBe(2.5)
     expect(parseAmount('')).toBeNaN()

@@ -51,7 +51,8 @@ export function MedicationForm({
       await updateMedication(medication.id, input, fromDateTimeLocal(changeAt))
       onSaved?.(medication.id)
     } else {
-      onSaved?.(await addMedication(input))
+      const id = await addMedication(input)
+      onSaved?.(id)
     }
   }
 

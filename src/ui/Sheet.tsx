@@ -1,10 +1,15 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import { useFeedback } from './feedback'
 
 const SheetCloseContext = createContext<() => void>(() => {})
+const SheetActionContext = createContext<() => void>(() => {})
 
 /** Closes the surrounding sheet with its exit animation. */
 export const useCloseSheet = () => useContext(SheetCloseContext)
+
+/** Runs the surrounding sheet's primary action, for a second button inside the sheet. */
+export const useSheetAction = () => useContext(SheetActionContext)
 
 /**
  * A tall bottom sheet with Cancel / title / primary action in a sticky header,
@@ -28,6 +33,7 @@ export function Sheet({
 }) {
   const [closing, setClosing] = useState(false)
   const [busy, setBusy] = useState(false)
+  const { toast } = useFeedback()
 
   useEffect(() => {
     const prev = document.body.style.overflow
@@ -47,6 +53,10 @@ export function Sheet({
     setBusy(true)
     try {
       if ((await onAction()) !== false) close()
+    } catch (err) {
+      // Keep the sheet open so nothing typed is lost, and say what went wrong.
+      console.error(err)
+      toast(`Couldn’t save: ${err instanceof Error ? err.message : String(err)}`)
     } finally {
       setBusy(false)
     }
@@ -85,7 +95,9 @@ export function Sheet({
           </div>
         </header>
         <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-[max(env(safe-area-inset-bottom),24px)]">
-          <SheetCloseContext value={close}>{children}</SheetCloseContext>
+          <SheetCloseContext value={close}>
+            <SheetActionContext value={act}>{children}</SheetActionContext>
+          </SheetCloseContext>
         </div>
       </div>
     </div>,
