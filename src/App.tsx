@@ -6,7 +6,8 @@ import { InsightsScreen } from './screens/InsightsScreen'
 import { InstallScreen } from './screens/InstallScreen'
 import { MedicationDetailScreen } from './screens/MedicationDetailScreen'
 import { MedicationsScreen } from './screens/MedicationsScreen'
-import { PlaceholderScreen } from './screens/PlaceholderScreen'
+import { SettingsScreen } from './screens/SettingsScreen'
+import { SummaryScreen } from './screens/SummaryScreen'
 import { TodayScreen } from './screens/TodayScreen'
 import { FeedbackProvider } from './ui/feedback'
 import { TabBar } from './ui/layout'
@@ -49,11 +50,13 @@ function screenFor(route: Route): ReactNode {
       return <HistoryScreen />
     case 'insights':
       return <InsightsScreen />
+    case 'settings':
+      return <SettingsScreen />
+    case 'summary':
+      return <SummaryScreen id={route.id} />
     case 'medications':
       return <MedicationsScreen />
     case 'medication':
       return <MedicationDetailScreen id={route.id} />
-    default:
-      return <PlaceholderScreen route={route} />
   }
 }

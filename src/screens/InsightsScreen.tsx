@@ -4,6 +4,7 @@ import { AfterDoseChart } from '../components/charts/AfterDoseChart'
 import { CalmTimeline } from '../components/charts/CalmTimeline'
 import { EffectBreakdown } from '../components/charts/EffectBreakdown'
 import { MonthMosaic } from '../components/charts/MonthMosaic'
+import { SummarySection } from '../components/SummarySection'
 import { useMedications, useTags } from '../data/hooks'
 import { db } from '../db/db'
 import { addDays, DAY, dayKey, startOfDay } from '../lib/time'
@@ -14,7 +15,7 @@ import { Chip, EmptyState, SectionTitle, Segmented } from '../ui/primitives'
 type Range = '4w' | '12w' | 'all'
 const RANGE_DAYS: Record<Exclude<Range, 'all'>, number> = { '4w': 28, '12w': 84 }
 
-export function InsightsScreen({ summarySlot }: { summarySlot?: React.ReactNode }) {
+export function InsightsScreen() {
   const meds = useMedications()
   const tags = useTags()
   const [range, setRange] = useState<Range>('4w')
@@ -56,7 +57,7 @@ export function InsightsScreen({ summarySlot }: { summarySlot?: React.ReactNode 
     <>
       <ScreenHeader title="Insights" />
       <Page>
-        {summarySlot}
+        {meds.length > 0 && <SummarySection medications={meds} />}
 
         {meds.length === 0 && earliest === null ? (
           <EmptyState icon="insights" title="Graphs will grow here">
