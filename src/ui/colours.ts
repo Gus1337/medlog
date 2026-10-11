@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { PALETTE_KEYS, type Feel, type PaletteKey } from '../db/types'
+import { HABIT_SLOTS, PALETTE_KEYS, type Feel, type PaletteKey } from '../db/types'
 
 export const PALETTE_LABELS: Record<PaletteKey, string> = {
   sage: 'Sage',
@@ -12,6 +12,9 @@ export const PALETTE_LABELS: Record<PaletteKey, string> = {
 
 /** CSS colour for a medication; follows light and dark mode. */
 export const medColour = (key: PaletteKey) => `var(--med-${key})`
+
+/** CSS colour for a habit's line colour slot. */
+export const habitColour = (slot: number) => `var(--habit-${slot % HABIT_SLOTS})`
 
 export const feelColour = (feel: Feel) => `var(--${feel})`
 
@@ -27,6 +30,7 @@ export interface ThemeColours {
   accent: string
   feel: Record<Feel, string>
   med: Record<PaletteKey, string>
+  habit: string[]
 }
 
 function read(): ThemeColours {
@@ -42,6 +46,7 @@ function read(): ThemeColours {
     accent: v('--accent'),
     feel: { good: v('--good'), neutral: v('--neutral'), bad: v('--bad') },
     med: Object.fromEntries(PALETTE_KEYS.map((k) => [k, v(`--med-${k}`)])) as Record<PaletteKey, string>,
+    habit: Array.from({ length: HABIT_SLOTS }, (_, i) => v(`--habit-${i}`)),
   }
 }
 

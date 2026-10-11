@@ -43,6 +43,8 @@ export function validateBackup(json: unknown): Backup {
   }
   const ids = new Set((b.data.medications ?? []).map((m) => m.id))
   if ((b.data.doseLogs ?? []).some((l) => !ids.has(l.medicationId))) throw new BackupError('The backup file is damaged (doses without a medication).')
+  const habitIds = new Set((b.data.habits ?? []).map((h) => h.id))
+  if ((b.data.habitLogs ?? []).some((l) => !habitIds.has(l.habitId))) throw new BackupError('The backup file is damaged (habit days without a habit).')
   return b as Backup
 }
 
@@ -61,7 +63,7 @@ export function summariseBackup(b: Backup) {
   const d = b.data
   return `${d.medications?.length ?? 0} medications, ${d.doseLogs?.length ?? 0} doses, ${d.effects?.length ?? 0} effects, ${
     d.notes?.length ?? 0
-  } notes and ${d.checkIns?.length ?? 0} check-ins`
+  } notes, ${d.checkIns?.length ?? 0} check-ins and ${d.habits?.length ?? 0} habits`
 }
 
 /** Deletes every record and every setting (API key, PIN, backup date). */

@@ -35,9 +35,14 @@ describe('csv', () => {
       'notes.csv',
       'check_ins.csv',
       'summaries.csv',
+      'habits.csv',
+      'habit_log.csv',
     ])
     const effects = files.find((f) => f.name === 'effects.csv')!.content.trim().split('\r\n')
     expect(effects).toHaveLength(sample.effects.length + 1)
     expect(effects[1]).toMatch(/after (Lisdexamfetamine|Sertraline)/)
+    const habitLog = files.find((f) => f.name === 'habit_log.csv')!.content.trim().split('\r\n')
+    expect(habitLog).toHaveLength(sample.habitLogs.length + 1)
+    expect(habitLog[1]).toMatch(/^\d{4}-\d{2}-\d{2},(Read|Workout|Steps),/)
   })
 })

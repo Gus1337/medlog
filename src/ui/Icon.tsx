@@ -19,6 +19,7 @@ const PATHS = {
   lock: 'M6 11h12v9H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3',
   share: 'M12 3v12M8 7l4-4 4 4M5 12v8h14v-8',
   edit: 'M4 20h4L19 9l-4-4L4 16zM14 6l4 4',
+  target: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM12 12h.01',
 } as const
 
 export type IconName = keyof typeof PATHS

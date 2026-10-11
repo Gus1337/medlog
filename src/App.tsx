@@ -13,6 +13,8 @@ import { TabBar } from './ui/layout'
 // Screens with graphs load on demand, keeping the charting library out of the first load.
 const InsightsScreen = lazy(() => import('./screens/InsightsScreen').then((m) => ({ default: m.InsightsScreen })))
 const MedicationDetailScreen = lazy(() => import('./screens/MedicationDetailScreen').then((m) => ({ default: m.MedicationDetailScreen })))
+const HabitsScreen = lazy(() => import('./screens/HabitsScreen').then((m) => ({ default: m.HabitsScreen })))
+const HabitDetailScreen = lazy(() => import('./screens/HabitDetailScreen').then((m) => ({ default: m.HabitDetailScreen })))
 const SummaryScreen = lazy(() => import('./screens/SummaryScreen').then((m) => ({ default: m.SummaryScreen })))
 
 export default function App() {
@@ -65,5 +67,9 @@ function screenFor(route: Route): ReactNode {
       return <MedicationsScreen />
     case 'medication':
       return <MedicationDetailScreen id={route.id} />
+    case 'habits':
+      return <HabitsScreen />
+    case 'habit':
+      return <HabitDetailScreen id={route.id} />
   }
 }

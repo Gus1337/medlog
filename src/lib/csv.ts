@@ -1,5 +1,5 @@
 // CSV export of all raw data, one file per kind of record.
-import type { CheckIn, DoseChange, DoseLog, EffectEntry, Medication, Note, Summary, Tag } from '../db/types'
+import type { CheckIn, DoseChange, DoseLog, EffectEntry, Habit, HabitLog, Medication, Note, Summary, Tag } from '../db/types'
 import { formatDuration } from './time'
 import { indexDoseLogs, sinceDoseForMedication } from './timeSinceDose'
 
@@ -33,11 +33,14 @@ export interface AllData {
   notes: Note[]
   checkIns: CheckIn[]
   summaries: Summary[]
+  habits: Habit[]
+  habitLogs: HabitLog[]
 }
 
 export function buildCsvFiles(data: AllData): { name: string; content: string }[] {
   const medName = new Map(data.medications.map((m) => [m.id, m.name]))
   const tagName = new Map(data.tags.map((t) => [t.id, t.name]))
+  const habitById = new Map(data.habits.map((h) => [h.id, h]))
   const doseIndex = indexDoseLogs(data.doseLogs)
   const byTime = <T,>(list: T[], key: (x: T) => number) => [...list].sort((a, b) => key(a) - key(b))
 
@@ -114,6 +117,33 @@ export function buildCsvFiles(data: AllData): { name: string; content: string }[
           s.entryCount,
           s.text,
         ]),
+      ),
+    },
+    {
+      name: 'habits.csv',
+      content: toCsv(
+        ['name', 'kind', 'unit', 'daily_target', 'days_per_week_target', 'added', 'archived'],
+        byTime(data.habits, (h) => h.createdAt).map((h) => [
+          h.name,
+          h.kind === 'check' ? 'done/not done' : 'amount',
+          h.unit,
+          h.dailyTarget,
+          h.weeklyTarget,
+          csvTime(h.createdAt).slice(0, 10),
+          h.isArchived,
+        ]),
+      ),
+    },
+    {
+      name: 'habit_log.csv',
+      content: toCsv(
+        ['date', 'habit', 'value', 'unit', 'on_target'],
+        [...data.habitLogs]
+          .sort((a, b) => a.date.localeCompare(b.date))
+          .map((l) => {
+            const h = habitById.get(l.habitId)
+            return [l.date, h?.name, l.value, h?.unit, h ? l.value >= h.dailyTarget : undefined]
+          }),
       ),
     },
   ]

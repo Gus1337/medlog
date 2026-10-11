@@ -36,6 +36,20 @@ describe('backup', () => {
     expect(() => validateBackup({ app: 'medlog', version: 1, exportedAt: '', data })).toThrow(/without a medication/)
   })
 
+  it('rejects habit days that point at missing habits', () => {
+    const s = generateSampleData()
+    const data = { ...s, habits: [], summaries: [] }
+    expect(() => validateBackup({ app: 'medlog', version: 1, exportedAt: '', data })).toThrow(/without a habit/)
+  })
+
+  it('restores backups made before habits existed', async () => {
+    const old = await createBackup()
+    const { habits: _h, habitLogs: _l, ...withoutHabits } = old.data
+    await restoreBackup(validateBackup({ ...old, data: withoutHabits }))
+    expect(await db.habits.count()).toBe(0)
+    expect(await db.effects.count()).toBe(old.data.effects.length)
+  })
+
   it('deletes all data and settings', async () => {
     await setSetting('pinHash', { salt: 'x', hash: 'y', iterations: 1, length: 4 })
     await deleteAllData()

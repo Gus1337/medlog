@@ -1,7 +1,7 @@
 // Debug-only sample data. Imported dynamically behind `import.meta.env.DEV`,
 // so it is not part of production builds.
 import { DATA_TABLES, db, newId } from '../db/db'
-import type { CheckIn, DoseChange, DoseLog, EffectEntry, Feel, Medication, Note, Tag } from '../db/types'
+import type { CheckIn, DoseChange, DoseLog, EffectEntry, Feel, Habit, HabitLog, Medication, Note, Tag } from '../db/types'
 import { HOUR, MINUTE, addDays, atTimeOfDay, dayKey, startOfDay } from '../lib/time'
 
 export interface SampleData {
@@ -12,6 +12,8 @@ export interface SampleData {
   tags: Tag[]
   notes: Note[]
   checkIns: CheckIn[]
+  habits: Habit[]
+  habitLogs: HabitLog[]
 }
 
 interface EffectTemplate {
@@ -152,7 +154,11 @@ export function generateSampleData(now = Date.now(), days = 35, seed = 42): Samp
     if (i === days - 5) notes.push({ id: newId(), createdAt: atTimeOfDay(day, '20:15'), text: 'Busy day with travel. Ate late.' })
   }
 
+  const { habits, habitLogs } = sampleHabits(first, today, days, now, rng(seed + 1))
+
   return {
+    habits,
+    habitLogs,
     medications: [stim, ssri],
     doseChanges,
     doseLogs,
@@ -161,6 +167,34 @@ export function generateSampleData(now = Date.now(), days = 35, seed = 42): Samp
     notes,
     checkIns,
   }
+}
+
+/** Read, Workout and Steps, logged more often as the weeks go on. */
+function sampleHabits(first: number, today: number, days: number, now: number, rand: () => number) {
+  const habit = (name: string, colour: number, rest: Pick<Habit, 'kind' | 'unit' | 'dailyTarget' | 'weeklyTarget'>): Habit => ({
+    id: newId(), name, colour, createdAt: first + 9 * HOUR + colour * MINUTE, isArchived: false, ...rest,
+  })
+  const read = habit('Read', 0, { kind: 'check', unit: '', dailyTarget: 1, weeklyTarget: 5 })
+  const workout = habit('Workout', 1, { kind: 'check', unit: '', dailyTarget: 1, weeklyTarget: 3 })
+  const steps = habit('Steps', 2, { kind: 'amount', unit: 'steps', dailyTarget: 10000, weeklyTarget: 5 })
+  const habitLogs: HabitLog[] = []
+  const add = (h: Habit, day: number, value: number) =>
+    habitLogs.push({ id: newId(), habitId: h.id, date: dayKey(day), value, updatedAt: day + 21 * HOUR })
+
+  for (let i = 0; i <= days; i++) {
+    const day = addDays(first, i)
+    const progress = i / days
+    const weekday = new Date(day).getDay()
+    // Today is only partly logged.
+    if (day === today && now - today < 20 * HOUR) {
+      if (rand() < 0.5) add(steps, day, Math.round((3000 + rand() * 3000) / 10) * 10)
+      continue
+    }
+    if (rand() < 0.45 + progress * 0.4) add(read, day, 1)
+    if ([1, 3, 5].includes(weekday) ? rand() < 0.5 + progress * 0.4 : rand() < 0.12) add(workout, day, 1)
+    if (rand() < 0.9) add(steps, day, Math.round((5500 + rand() * 5000 + progress * 2500) / 10) * 10)
+  }
+  return { habits: [read, workout, steps], habitLogs }
 }
 
 /** Replaces all data with sample data. */
@@ -175,5 +209,7 @@ export async function loadSampleData() {
     await db.tags.bulkAdd(data.tags)
     await db.notes.bulkAdd(data.notes)
     await db.checkIns.bulkAdd(data.checkIns)
+    await db.habits.bulkAdd(data.habits)
+    await db.habitLogs.bulkAdd(data.habitLogs)
   })
 }

@@ -163,7 +163,7 @@ export function DataSection() {
     const ok = await confirm({
       title: 'Delete all data?',
       message:
-        'This removes every medication, dose, effect, note, check-in and summary from this phone, plus your API key and PIN. It can’t be undone unless you have a backup file.',
+        'This removes every medication, dose, effect, note, check-in, summary and habit from this phone, plus your API key and PIN. It can’t be undone unless you have a backup file.',
       confirmLabel: 'Delete everything',
     })
     if (!ok) return

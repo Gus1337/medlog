@@ -8,6 +8,8 @@ export type Route =
   | { name: 'medication'; id: string }
   | { name: 'settings' }
   | { name: 'summary'; id: string }
+  | { name: 'habits' }
+  | { name: 'habit'; id: string }
 
 export type TabName = 'today' | 'history' | 'insights' | 'medications'
 
@@ -24,6 +26,8 @@ export function parseHash(hash: string): Route {
       return { name: 'settings' }
     case 'summary':
       return second ? { name: 'summary', id: decodeURIComponent(second) } : { name: 'insights' }
+    case 'habits':
+      return second ? { name: 'habit', id: decodeURIComponent(second) } : { name: 'habits' }
     default:
       return { name: 'today' }
   }
@@ -35,6 +39,8 @@ export function routeToHash(route: Route): string {
       return `#/medications/${encodeURIComponent(route.id)}`
     case 'summary':
       return `#/summary/${encodeURIComponent(route.id)}`
+    case 'habit':
+      return `#/habits/${encodeURIComponent(route.id)}`
     default:
       return `#/${route.name}`
   }
@@ -47,6 +53,9 @@ export function tabOf(route: Route): TabName | null {
       return 'medications'
     case 'summary':
       return 'insights'
+    case 'habits':
+    case 'habit':
+      return 'today'
     case 'settings':
       return null
     default:

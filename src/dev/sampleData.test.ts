@@ -12,6 +12,14 @@ describe('generateSampleData', () => {
     expect(data.doseLogs.some((d) => d.status === 'skipped')).toBe(true)
   })
 
+  it('includes habits with logs that point at them', () => {
+    expect(data.habits.map((h) => h.name)).toEqual(['Read', 'Workout', 'Steps'])
+    const ids = new Set(data.habits.map((h) => h.id))
+    expect(data.habitLogs.length).toBeGreaterThan(50)
+    expect(data.habitLogs.every((l) => ids.has(l.habitId))).toBe(true)
+    expect(new Set(data.habitLogs.map((l) => `${l.habitId}${l.date}`)).size).toBe(data.habitLogs.length)
+  })
+
   it('never logs anything in the future', () => {
     expect(data.effects.every((e) => e.timestamp <= now)).toBe(true)
     expect(data.doseLogs.every((d) => d.timestamp <= now)).toBe(true)

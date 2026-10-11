@@ -4,6 +4,8 @@ import type {
   DoseChange,
   DoseLog,
   EffectEntry,
+  Habit,
+  HabitLog,
   Medication,
   Note,
   Setting,
@@ -20,6 +22,8 @@ export class MedLogDB extends Dexie {
   notes!: EntityTable<Note, 'id'>
   checkIns!: EntityTable<CheckIn, 'id'>
   summaries!: EntityTable<Summary, 'id'>
+  habits!: EntityTable<Habit, 'id'>
+  habitLogs!: EntityTable<HabitLog, 'id'>
   settings!: EntityTable<Setting, 'key'>
 
   constructor(name = 'medlog') {
@@ -34,6 +38,10 @@ export class MedLogDB extends Dexie {
       checkIns: 'id, &date',
       summaries: 'id, createdAt, scope',
       settings: 'key',
+    })
+    this.version(2).stores({
+      habits: 'id, createdAt',
+      habitLogs: 'id, habitId, date, &[habitId+date]',
     })
   }
 }
@@ -50,6 +58,8 @@ export const DATA_TABLES = [
   'notes',
   'checkIns',
   'summaries',
+  'habits',
+  'habitLogs',
 ] as const
 export type DataTable = (typeof DATA_TABLES)[number]
 

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { CheckInCard } from '../components/CheckInCard'
 import { useEntryEditor } from '../components/EntryEditor'
+import { HabitsSection } from '../components/HabitsSection'
 import { MedicationCard } from '../components/MedicationCard'
 import { MedicationForm } from '../components/MedicationForm'
 import { buildTimeline, Timeline, type TimelineContext } from '../components/Timeline'
@@ -71,6 +72,8 @@ export function TodayScreen() {
         >
           <Icon name="sparkle" size={24} className="text-accent" />I noticed something
         </button>
+
+        <HabitsSection now={now} />
 
         <SectionTitle
           action={

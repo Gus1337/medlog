@@ -84,6 +84,39 @@ export interface Summary {
   entryCount: number
 }
 
+/** Yes/no habits are done or not; amount habits count something (steps, pages, minutes). */
+export type HabitKind = 'check' | 'amount'
+
+/** Number of line colours for habits, validated as a set for colour-blind separation. */
+export const HABIT_SLOTS = 6
+
+export interface Habit {
+  id: string
+  name: string
+  kind: HabitKind
+  /** Unit for amount habits ("steps", "min"); empty for yes/no habits. */
+  unit: string
+  /** Amount that counts as "on target" for a day; 1 for yes/no habits. */
+  dailyTarget: number
+  /** Days per week you aim to be on target, 1-7. */
+  weeklyTarget: number
+  /** Index into the habit colours, 0 to HABIT_SLOTS - 1. */
+  colour: number
+  createdAt: number
+  isArchived: boolean
+}
+
+/** One per habit per day. */
+export interface HabitLog {
+  id: string
+  habitId: string
+  /** Local calendar day, "YYYY-MM-DD". */
+  date: string
+  /** 1 for a yes/no habit; the amount for an amount habit. */
+  value: number
+  updatedAt: number
+}
+
 /** Small key-value store for app settings (API key, PIN hash, backup date...). */
 export interface Setting {
   key: string

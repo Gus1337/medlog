@@ -34,15 +34,19 @@ export function ChartCard({
   )
 }
 
-export function LegendRow({ items }: { items: { label: string; colour: string; shape?: 'dot' | 'line' }[] }) {
+export function LegendRow({ items }: { items: { label: string; colour: string; shape?: 'dot' | 'line' | 'dash' }[] }) {
   return (
     <ul className="flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-muted">
       {items.map((i) => (
         <li key={i.label} className="flex items-center gap-1.5">
-          <span
-            className={i.shape === 'line' ? 'h-0.5 w-4 rounded-full' : 'h-2.5 w-2.5 rounded-full'}
-            style={{ backgroundColor: i.colour }}
-          />
+          {i.shape === 'dash' ? (
+            <span className="w-4 border-t-2 border-dashed" style={{ borderColor: i.colour }} />
+          ) : (
+            <span
+              className={i.shape === 'line' ? 'h-0.5 w-4 rounded-full' : 'h-2.5 w-2.5 rounded-full'}
+              style={{ backgroundColor: i.colour }}
+            />
+          )}
           {i.label}
         </li>
       ))}

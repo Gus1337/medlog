@@ -28,6 +28,19 @@ The first launch needs an internet connection. After that MedLog works offline. 
 3. **I noticed something**: type what you noticed, tap a feel (Good, Neutral or Unwanted), then **Save**. Tags, strength, medication and time are optional. "Not sure" is the default medication.
 4. **Evening check-in** at the bottom of Today: four 1–5 sliders, or **Not today**.
 
+## Habits
+
+Habits are a separate tracker that lives on **Today**, below the medications. They are not part of the medication graphs or AI summaries.
+
+- **Add a habit**: on Today (or **Habits → Add habit**), pick a preset such as Read, Workout or 10K steps, or make your own.
+  - **Done / not done** habits are logged with one tap on the circle. Tap again to undo.
+  - **Amount** habits (steps, minutes, pages) open a small sheet where you type the amount or tap **Reached the target**.
+- **Targets**: every habit has a number of days per week you aim for, and amount habits also have a daily target. A day counts when you reach the daily target.
+- **Progress** (on Today, next to the Habits heading): one line per habit showing how much of its weekly target you reached over the 7 days up to each day, over 4 weeks, 3 months or a year. Tap the habit chips to show or hide lines.
+- **Habit page** (tap a habit's name): this week and the period at a glance, the last 14 days to fill in or correct, a line of days on target, and for amount habits a line of the daily amounts against the target. Habits can be edited, archived (history kept) or deleted.
+
+There are no streaks and nothing marks a missed day.
+
 ## Back up and restore your data
 
 Your data exists only on this iPhone. Deleting the Home Screen icon deletes the data with it. Back up now and then.
@@ -38,7 +51,7 @@ Your data exists only on this iPhone. Deleting the Home Screen icon deletes the 
 2. In the share sheet choose **Save to Files**, and pick **iCloud Drive** or **On My iPhone**. AirDrop to a Mac or emailing it to yourself also works.
 3. Settings shows the date of your last backup.
 
-The backup is one JSON file with all medications, doses, effects, tags, notes, check-ins and summaries. It deliberately leaves out your API key and PIN. The file isn't encrypted, so keep it somewhere private.
+The backup is one JSON file with all medications, doses, effects, tags, notes, check-ins, summaries and habits. It deliberately leaves out your API key and PIN. The file isn't encrypted, so keep it somewhere private.
 
 ### Restore (for example on a new phone, or after reinstalling)
 
@@ -49,7 +62,7 @@ The backup is one JSON file with all medications, doses, effects, tags, notes, c
 
 ### Other data options
 
-- **Export CSV**: all raw data as spreadsheet files, one per kind of record (doses, effects with time since dose, notes, check-ins and so on).
+- **Export CSV**: all raw data as spreadsheet files, one per kind of record (doses, effects with time since dose, notes, check-ins, habits and the habit log, and so on).
 - **Summary as PDF**: open a saved summary and tap **Print or PDF**. In the print preview, use **Share → Save to Files** (or pinch out on the preview) to get a PDF.
 - **Delete all data**: removes everything, including the API key and PIN, after a confirmation.
 
@@ -89,8 +102,8 @@ Project layout:
 | Path | What's there |
 |---|---|
 | `src/db/` | Dexie database and record types |
-| `src/data/` | Reads and writes (medications, entries, check-ins, summaries, backup) |
-| `src/lib/` | Pure logic with tests: time since dose, analytics, search, CSV, PIN, summary aggregation and prompt |
+| `src/data/` | Reads and writes (medications, entries, check-ins, habits, summaries, backup) |
+| `src/lib/` | Pure logic with tests: time since dose, analytics, habit progress, search, CSV, PIN, summary aggregation and prompt |
 | `src/components/`, `src/screens/` | UI |
 | `src/dev/sampleData.ts` | Development-only sample data |
 

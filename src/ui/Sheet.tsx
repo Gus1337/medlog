@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 
 const SheetCloseContext = createContext<() => void>(() => {})
 
@@ -51,7 +52,9 @@ export function Sheet({
     }
   }
 
-  return (
+  // Rendered at the end of <body>: an animated (transformed) ancestor would
+  // otherwise become the reference for `position: fixed`.
+  return createPortal(
     <div className="fixed inset-0 z-40" role="dialog" aria-modal="true" aria-label={title}>
       <div
         className={`animate-backdrop absolute inset-0 bg-black/25 transition-opacity duration-300 ${closing ? 'opacity-0' : ''}`}
@@ -85,6 +88,7 @@ export function Sheet({
           <SheetCloseContext value={close}>{children}</SheetCloseContext>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

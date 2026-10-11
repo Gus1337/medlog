@@ -23,6 +23,13 @@
   --med-clay: #b88a78;
   --med-lavender: #9a8fb3;
   --med-teal: #6f9c9c;
+  /* Habit line colours: one set, ordered and checked for colour-blind separation. */
+  --habit-0: #3c7bb8;
+  --habit-1: #ae5f3a;
+  --habit-2: #148c66;
+  --habit-3: #955fa1;
+  --habit-4: #8d7608;
+  --habit-5: #716cb8;
   color-scheme: light;
 }
 
@@ -47,6 +54,12 @@
     --med-clay: #c99d8b;
     --med-lavender: #ada3c6;
     --med-teal: #86b3b2;
+    --habit-0: #6aa3dd;
+    --habit-1: #d58966;
+    --habit-2: #57b38e;
+    --habit-3: #bc89c7;
+    --habit-4: #b39e4c;
+    --habit-5: #9895dd;
     color-scheme: dark;
   }
 }
