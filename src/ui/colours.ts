@@ -50,14 +50,20 @@ function read(): ThemeColours {
   }
 }
 
-/** Resolved colour values for SVG charts, refreshed when the colour scheme changes. */
+/** Resolved colour values for SVG charts, refreshed when the OS colour scheme or the app's own theme setting changes. */
 export function useThemeColours(): ThemeColours {
   const [colours, setColours] = useState(read)
   useEffect(() => {
     const mq = matchMedia('(prefers-color-scheme: dark)')
     const update = () => setColours(read())
     mq.addEventListener('change', update)
-    return () => mq.removeEventListener('change', update)
+    // Catches Settings' Light/Dark/System switch, which toggles data-theme on <html> rather than the OS preference.
+    const observer = new MutationObserver(update)
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+    return () => {
+      mq.removeEventListener('change', update)
+      observer.disconnect()
+    }
   }, [])
   return colours
 }

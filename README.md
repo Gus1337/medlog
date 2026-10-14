@@ -1,10 +1,11 @@
 # MedLog
 
-A private medication and effect log for one person, on one iPhone. Log each dose with one tap, note the effects you notice with a timestamp, and see how each medication affects you over the hours after a dose and over the weeks. An optional weekly summary is written by Claude from statistics computed on the phone.
+A private medication and effect log for one person, on one iPhone. Log each dose with one tap, note the effects you notice with a timestamp, and see how each medication affects you over the hours after a dose and over the weeks. An optional weekly summary is written by Claude or OpenAI from statistics computed on the phone.
 
 - **No account, no backend, no analytics.** Everything is stored in the browser's IndexedDB on your iPhone.
 - **Works offline** once installed.
-- **The only network call** is to Anthropic's API, and only when you have added your own API key and tap **Generate**.
+- **The only network call** is to Anthropic's or OpenAI's API (whichever you choose), and only when you have added your own API key and tap **Generate**.
+- **Light or dark**, or follow the phone's own setting — **Settings** → **Appearance**.
 
 It is an installable web app (PWA): React, TypeScript, Vite, Tailwind CSS, Dexie, Recharts and vite-plugin-pwa, tested with Vitest.
 
@@ -51,32 +52,42 @@ Your data exists only on this iPhone. Deleting the Home Screen icon deletes the 
 2. In the share sheet choose **Save to Files**, and pick **iCloud Drive** or **On My iPhone**. AirDrop to a Mac or emailing it to yourself also works.
 3. Settings shows the date of your last backup.
 
-The backup is one JSON file with all medications, doses, effects, tags, notes, check-ins, summaries and habits. It deliberately leaves out your API key and PIN. The file isn't encrypted, so keep it somewhere private.
+The backup is one JSON file with all medications, doses, effects, tags, notes, check-ins, summaries and habits. It deliberately leaves out your API keys, PIN and appearance setting. The file isn't encrypted, so keep it somewhere private.
 
 ### Restore (for example on a new phone, or after reinstalling)
 
 1. Install MedLog as above and open it from the Home Screen.
 2. **Settings** → **Backup** → **Restore from a backup file**, and choose the file in Files.
 3. Confirm. **Everything currently in MedLog is replaced** by the backup's contents.
-4. If you used AI summaries, paste your API key again, and set your PIN again if you want one.
+4. If you used AI summaries, paste your API key again, and set your PIN and appearance again if you want them.
 
 ### Other data options
 
 - **Export CSV**: all raw data as spreadsheet files, one per kind of record (doses, effects with time since dose, notes, check-ins, habits and the habit log, and so on).
 - **Summary as PDF**: open a saved summary and tap **Print or PDF**. In the print preview, use **Share → Save to Files** (or pinch out on the preview) to get a PDF.
-- **Delete all data**: removes everything, including the API key and PIN, after a confirmation.
+- **Delete all data**: removes everything, including the API keys, PIN and appearance setting, after a confirmation.
 
 ## AI summaries
 
-1. Create an API key at [console.anthropic.com](https://console.anthropic.com) → **API keys**. Usage is billed to that Anthropic account; a weekly summary is one short request.
-2. In MedLog: **Settings** → **AI summaries**, paste the key, then **Save key**. It is stored only on the phone.
+MedLog can write summaries with either **Claude (Anthropic)** or **OpenAI** — pick one in Settings. Each keeps its own API key, stored only on the phone; switching providers doesn't delete the other provider's key.
+
+1. **Settings** → **AI summaries**, choose a provider, then create an API key for it:
+   - Claude: [console.anthropic.com](https://console.anthropic.com) → **API keys**.
+   - OpenAI: [platform.openai.com](https://platform.openai.com) → **API keys**.
+   
+   Usage is billed to that account; a weekly summary is one short request.
+2. Paste the key in MedLog and tap **Save key**.
 3. **Insights** → **Weekly summary**: choose Overall or a medication and a week, then tap **Generate**.
 
 What is sent: statistics computed on the phone (counts per tag, typical hours after a dose, good versus unwanted counts, dose and check-in figures, and the same figures for the week before), plus up to eight short excerpts from effect entries and four notes. Nothing else.
 
 With fewer than 5 effect entries in the week, MedLog says there isn't enough data and sends nothing. The model is told to describe patterns only, never to give dosing or medical advice, to state how many entries the summary is based on, and to say so when it cannot tell which medication caused an effect.
 
-The model ID is set once, in `src/lib/summary/claude.ts` (`CLAUDE_MODEL_ID`, currently `claude-opus-5-5`). Requests use server-side refusal fallbacks (`fallbacks: "default"`), so if Anthropic's safety classifier declines a request, the API retries it on another model instead of failing.
+The model IDs are set once: `src/lib/summary/claude.ts` (`CLAUDE_MODEL_ID`, currently `claude-opus-5-5`) and `src/lib/summary/openai.ts` (`OPENAI_MODEL_ID`, currently `gpt-5.1`) — update either if the provider ships a newer flagship model. Claude requests use server-side refusal fallbacks (`fallbacks: "default"`), so if Anthropic's safety classifier declines a request, the API retries it on another model instead of failing.
+
+## Appearance
+
+**Settings** → **Appearance**: **System** (follows the phone's own light/dark setting, the default), **Light** or **Dark**. The choice applies immediately and persists on this phone (it isn't included in backups, since it's a device preference, not log data).
 
 ## PIN lock
 

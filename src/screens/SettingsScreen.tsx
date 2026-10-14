@@ -3,14 +3,21 @@ import { useState } from 'react'
 import { DataSection, LockSection } from '../components/SettingsPrivacy'
 import { deleteTag, renameTag, tagUsage } from '../data/entries'
 import { useTags } from '../data/hooks'
-import { getApiKey, removeApiKey, setApiKey } from '../data/summaries'
+import { getApiKey, getProvider, removeApiKey, setApiKey, setProvider } from '../data/summaries'
 import type { Tag } from '../db/types'
 import { CLAUDE_MODEL_ID } from '../lib/summary/claude'
+import { OPENAI_MODEL_ID } from '../lib/summary/openai'
+import { PROVIDER_IDS, PROVIDER_LABELS, type ProviderId } from '../lib/summary/provider'
+import { getTheme, setTheme, THEME_LABELS, THEME_MODES, type ThemeMode } from '../lib/theme'
 import { goBack } from '../router'
 import { useFeedback } from '../ui/feedback'
 import { Page, ScreenHeader } from '../ui/layout'
-import { Button, inputClass, SettingsCard } from '../ui/primitives'
+import { Button, inputClass, Segmented, SettingsCard } from '../ui/primitives'
 import { Sheet } from '../ui/Sheet'
+
+const MODEL_IDS: Record<ProviderId, string> = { claude: CLAUDE_MODEL_ID, openai: OPENAI_MODEL_ID }
+const KEY_PLACEHOLDER: Record<ProviderId, string> = { claude: 'sk-ant-…', openai: 'sk-…' }
+const KEY_CONSOLE: Record<ProviderId, string> = { claude: 'console.anthropic.com', openai: 'platform.openai.com' }
 
 export function SettingsScreen() {
   return (
@@ -18,6 +25,7 @@ export function SettingsScreen() {
       <ScreenHeader title="Settings" onBack={() => goBack({ name: 'today' })} showSettings={false} />
       <Page>
         <div className="space-y-4">
+          <AppearanceSection />
           <AiSection />
           <TagsSection />
           <LockSection />
@@ -30,18 +38,43 @@ export function SettingsScreen() {
   )
 }
 
+function AppearanceSection() {
+  const theme = useLiveQuery(getTheme)
+  if (theme === undefined) return null
+
+  return (
+    <SettingsCard title="Appearance">
+      <p className="text-[15px] text-muted">Light or dark, or follow this phone’s own setting.</p>
+      <div className="mt-4">
+        <Segmented<ThemeMode> value={theme} options={THEME_MODES.map((m) => ({ value: m, label: THEME_LABELS[m] }))} onChange={setTheme} />
+      </div>
+    </SettingsCard>
+  )
+}
+
 function AiSection() {
-  const key = useLiveQuery(async () => (await getApiKey()) ?? '')
+  const provider = useLiveQuery(getProvider)
+  const key = useLiveQuery(async () => (provider ? (await getApiKey(provider)) ?? '' : undefined), [provider])
   const [draft, setDraft] = useState('')
   const { toast, confirm } = useFeedback()
-  if (key === undefined) return null
+  if (provider === undefined || key === undefined) return null
 
   return (
     <SettingsCard title="AI summaries">
       <p className="text-[15px] text-muted">
-        Summaries are written by Claude through Anthropic’s API, using your own API key. The key is stored only on this
+        Summaries are written by an AI model, using your own API key for that provider. The key is stored only on this
         phone. A request is sent only when you tap Generate.
       </p>
+      <div className="mt-4">
+        <Segmented<ProviderId>
+          value={provider}
+          options={PROVIDER_IDS.map((p) => ({ value: p, label: PROVIDER_LABELS[p] }))}
+          onChange={(p) => {
+            setDraft('')
+            setProvider(p)
+          }}
+        />
+      </div>
       {key ? (
         <div className="mt-4 space-y-3">
           <p className="rounded-2xl bg-surface-2 px-4 py-3 font-mono text-[15px]">
@@ -51,7 +84,7 @@ function AiSection() {
             className="w-full"
             onClick={async () => {
               if (await confirm({ title: 'Remove the API key?', message: 'You can paste it again at any time.', confirmLabel: 'Remove' })) {
-                await removeApiKey()
+                await removeApiKey(provider)
                 toast('API key removed')
               }
             }}
@@ -63,31 +96,33 @@ function AiSection() {
         <div className="mt-4 space-y-3">
           <input
             className={`${inputClass} font-mono`}
-            placeholder="sk-ant-…"
+            placeholder={KEY_PLACEHOLDER[provider]}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             autoComplete="off"
             autoCapitalize="off"
             autoCorrect="off"
             spellCheck={false}
-            aria-label="Claude API key"
+            aria-label={`${PROVIDER_LABELS[provider]} API key`}
           />
           <Button
             variant="primary"
             className="w-full"
             disabled={!draft.trim().startsWith('sk-')}
             onClick={async () => {
-              await setApiKey(draft)
+              await setApiKey(provider, draft)
               setDraft('')
               toast('API key saved on this phone')
             }}
           >
             Save key
           </Button>
-          <p className="text-[13px] text-faint">Create a key at console.anthropic.com → API keys. Usage is billed to that account.</p>
+          <p className="text-[13px] text-faint">
+            Create a key at {KEY_CONSOLE[provider]} → API keys. Usage is billed to that account.
+          </p>
         </div>
       )}
-      <p className="mt-3 text-[13px] text-faint">Model: {CLAUDE_MODEL_ID}</p>
+      <p className="mt-3 text-[13px] text-faint">Model: {MODEL_IDS[provider]}</p>
     </SettingsCard>
   )
 }

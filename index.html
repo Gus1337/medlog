@@ -7,12 +7,25 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="MedLog" />
-    <meta name="theme-color" content="#f4f1ea" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#1c1f1d" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f4f1ea" media="(prefers-color-scheme: light)" data-theme-meta="light" />
+    <meta name="theme-color" content="#1c1f1d" media="(prefers-color-scheme: dark)" data-theme-meta="dark" />
     <meta name="color-scheme" content="light dark" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>MedLog</title>
+    <script>
+      // Applied before first paint so switching themes (or the OS default) never flashes the wrong one.
+      // Mirrors src/lib/theme.ts; the app re-syncs this against Dexie's stored setting on boot.
+      try {
+        var t = localStorage.getItem('medlog-theme')
+        if (t === 'light' || t === 'dark') {
+          document.documentElement.setAttribute('data-theme', t)
+          var other = t === 'light' ? 'dark' : 'light'
+          document.querySelector('meta[data-theme-meta="' + t + '"]').media = 'all'
+          document.querySelector('meta[data-theme-meta="' + other + '"]').media = 'not all'
+        }
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

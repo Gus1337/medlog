@@ -1,6 +1,7 @@
-import { lazy, Suspense, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import { LockGate } from './components/LockGate'
 import { isStandalone } from './lib/standalone'
+import { getTheme, readLocalTheme, setTheme } from './lib/theme'
 import { tabOf, useRoute, type Route } from './router'
 import { HistoryScreen } from './screens/HistoryScreen'
 import { InstallScreen } from './screens/InstallScreen'
@@ -18,6 +19,14 @@ const HabitDetailScreen = lazy(() => import('./screens/HabitDetailScreen').then(
 const SummaryScreen = lazy(() => import('./screens/SummaryScreen').then((m) => ({ default: m.SummaryScreen })))
 
 export default function App() {
+  // Applied synchronously before paint by the inline script in index.html; re-sync against Dexie's
+  // stored value (the source of truth) in case it differs, e.g. after a reinstall cleared localStorage.
+  useEffect(() => {
+    getTheme().then((stored) => {
+      if (stored !== readLocalTheme()) setTheme(stored)
+    })
+  }, [])
+
   // In development, `?browser` in the URL skips the install screen (for testing in a desktop browser).
   const [devBypass, setDevBypass] = useState(() => import.meta.env.DEV && new URLSearchParams(location.search).has('browser'))
 

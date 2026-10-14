@@ -7,5 +7,13 @@ export interface SummaryProvider {
   generate(aggregates: SummaryAggregates, signal?: AbortSignal): Promise<string>
 }
 
+export const PROVIDER_IDS = ['claude', 'openai'] as const
+export type ProviderId = (typeof PROVIDER_IDS)[number]
+
+export const PROVIDER_LABELS: Record<ProviderId, string> = {
+  claude: 'Claude (Anthropic)',
+  openai: 'OpenAI',
+}
+
 /** An error with a calm, user-facing message. */
 export class SummaryError extends Error {}

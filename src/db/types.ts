@@ -82,6 +82,8 @@ export interface Summary {
   scope: string
   text: string
   entryCount: number
+  /** Which AI provider wrote it. Absent on summaries written before provider choice existed (Claude). */
+  provider?: 'claude' | 'openai'
 }
 
 /** Yes/no habits are done or not; amount habits count something (steps, pages, minutes). */

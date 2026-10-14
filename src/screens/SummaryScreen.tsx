@@ -3,6 +3,7 @@ import { scopeLabel } from '../components/SummarySection'
 import { deleteSummary } from '../data/summaries'
 import { useMedications } from '../data/hooks'
 import { db } from '../db/db'
+import { PROVIDER_LABELS } from '../lib/summary/provider'
 import { formatDateTime, formatShortDate } from '../lib/time'
 import { goBack } from '../router'
 import { useFeedback } from '../ui/feedback'
@@ -44,8 +45,9 @@ export function SummaryScreen({ id }: { id: string }) {
           </header>
           <Markdown text={summary.text} />
           <footer className="mt-6 border-t border-line pt-3 text-[13px] text-muted">
-            Based on {summary.entryCount} effect entries. Written {formatDateTime(summary.createdAt)} by Claude from
-            aggregated log data. A description of patterns, not medical advice.
+            Based on {summary.entryCount} effect entries. Written {formatDateTime(summary.createdAt)} by{' '}
+            {PROVIDER_LABELS[summary.provider ?? 'claude']} from aggregated log data. A description of patterns, not
+            medical advice.
           </footer>
         </article>
         <div className="no-print mt-5 grid grid-cols-2 gap-3">

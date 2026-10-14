@@ -2,15 +2,24 @@ import { db, getSetting, newId, setSetting, deleteSetting } from '../db/db'
 import type { Summary } from '../db/types'
 import { buildAggregates, countEntries, MIN_EFFECT_ENTRIES, type Period, type SummaryScopeInput } from '../lib/summary/aggregate'
 import { ClaudeSummaryProvider } from '../lib/summary/claude'
+import { OpenAiSummaryProvider } from '../lib/summary/openai'
 import { notEnoughDataText } from '../lib/summary/prompt'
-import { SummaryError } from '../lib/summary/provider'
+import { PROVIDER_LABELS, SummaryError, type ProviderId, type SummaryProvider } from '../lib/summary/provider'
 import { DAY } from '../lib/time'
 
-const API_KEY = 'claudeApiKey'
+const PROVIDER_SETTING = 'summaryProvider'
+const API_KEYS: Record<ProviderId, string> = { claude: 'claudeApiKey', openai: 'openaiApiKey' }
 
-export const getApiKey = () => getSetting<string>(API_KEY)
-export const setApiKey = (key: string) => setSetting(API_KEY, key.trim())
-export const removeApiKey = () => deleteSetting(API_KEY)
+export const getProvider = async () => (await getSetting<ProviderId>(PROVIDER_SETTING)) ?? 'claude'
+export const setProvider = (provider: ProviderId) => setSetting(PROVIDER_SETTING, provider)
+
+export const getApiKey = (provider: ProviderId) => getSetting<string>(API_KEYS[provider])
+export const setApiKey = (provider: ProviderId, key: string) => setSetting(API_KEYS[provider], key.trim())
+export const removeApiKey = (provider: ProviderId) => deleteSetting(API_KEYS[provider])
+
+function makeProvider(provider: ProviderId, apiKey: string): SummaryProvider {
+  return provider === 'openai' ? new OpenAiSummaryProvider(apiKey) : new ClaudeSummaryProvider(apiKey)
+}
 
 export const scopeKey = (scope: SummaryScopeInput) => (scope.kind === 'overall' ? 'overall' : scope.medicationId)
 
@@ -34,11 +43,12 @@ export async function generateSummary(scope: SummaryScopeInput, period: Period, 
   const entryCount = countEntries(effects, scope, period)
   if (entryCount < MIN_EFFECT_ENTRIES) return { kind: 'not-enough', text: notEnoughDataText(entryCount) }
 
-  const apiKey = await getApiKey()
-  if (!apiKey) throw new SummaryError('Add your Claude API key in Settings first.')
+  const provider = await getProvider()
+  const apiKey = await getApiKey(provider)
+  if (!apiKey) throw new SummaryError(`Add your ${PROVIDER_LABELS[provider]} API key in Settings first.`)
 
   const aggregates = buildAggregates({ medications, effects, doseLogs, doseChanges, checkIns, notes, tags }, scope, period)
-  const text = await new ClaudeSummaryProvider(apiKey).generate(aggregates, signal)
+  const text = await makeProvider(provider, apiKey).generate(aggregates, signal)
 
   const summary: Summary = {
     id: newId(),
@@ -48,6 +58,7 @@ export async function generateSummary(scope: SummaryScopeInput, period: Period, 
     scope: scopeKey(scope),
     text,
     entryCount: aggregates.entryCount,
+    provider,
   }
   await db.summaries.add(summary)
   return { kind: 'saved', id: summary.id }

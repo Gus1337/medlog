@@ -1,10 +1,10 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useMemo, useRef, useState } from 'react'
-import { generateSummary, getApiKey } from '../data/summaries'
+import { generateSummary, getApiKey, getProvider } from '../data/summaries'
 import { db } from '../db/db'
 import type { Medication } from '../db/types'
 import { countEntries, MIN_EFFECT_ENTRIES, type Period, type SummaryScopeInput } from '../lib/summary/aggregate'
-import { SummaryError } from '../lib/summary/provider'
+import { PROVIDER_LABELS, SummaryError } from '../lib/summary/provider'
 import { addDays, formatShortDate, startOfDay, startOfWeek } from '../lib/time'
 import { navigate } from '../router'
 import { medColour } from '../ui/colours'
@@ -36,7 +36,8 @@ export function SummarySection({ medications }: { medications: Medication[] }) {
   const abort = useRef<AbortController | null>(null)
   const period = weeks[weekIndex].period
 
-  const hasKey = useLiveQuery(async () => !!(await getApiKey()))
+  const provider = useLiveQuery(getProvider)
+  const hasKey = useLiveQuery(async () => (provider ? !!(await getApiKey(provider)) : undefined), [provider])
   const entryCount = useLiveQuery(
     async () => countEntries(await db.effects.where('timestamp').between(period.start, period.end, true, false).toArray(), scope, period),
     [period.start, period.end, scope],
@@ -109,7 +110,7 @@ export function SummarySection({ medications }: { medications: Medication[] }) {
 
         {hasKey === false ? (
           <Button className="mt-4 w-full" icon="settings" onClick={() => navigate({ name: 'settings' })}>
-            Add your Claude API key in Settings
+            Add your {provider && PROVIDER_LABELS[provider]} API key in Settings
           </Button>
         ) : busy ? (
           <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-accent-soft px-4 py-3">
@@ -132,8 +133,9 @@ export function SummarySection({ medications }: { medications: Medication[] }) {
           </p>
         )}
         <p className="mt-3 text-[13px] text-faint">
-          Generating sends the week’s counts and up to a dozen short excerpts of your entries to Anthropic, using your key.
-          Nothing leaves the phone until you tap Generate.
+          Generating sends the week’s counts and up to a dozen short excerpts of your entries to{' '}
+          {provider ? PROVIDER_LABELS[provider] : 'the AI provider'}, using your key. Nothing leaves the phone until you
+          tap Generate.
         </p>
       </section>
 

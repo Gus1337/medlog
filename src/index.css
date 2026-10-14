@@ -33,8 +33,10 @@
   color-scheme: light;
 }
 
+/* Dark values, applied either by the OS preference (unless Light is forced below)
+   or by forcing Dark in Settings regardless of the OS. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --bg: #1b1e1c;
     --surface: #232725;
     --surface-2: #2b302d;
@@ -62,6 +64,40 @@
     --habit-5: #9895dd;
     color-scheme: dark;
   }
+}
+
+:root[data-theme='dark'] {
+  --bg: #1b1e1c;
+  --surface: #232725;
+  --surface-2: #2b302d;
+  --border: #353b38;
+  --text: #e6e4de;
+  --muted: #a3a9a4;
+  --faint: #737a75;
+  --accent: #8fae98;
+  --accent-soft: #2c3830;
+  --accent-ink: #18201b;
+  --good: #5fb3aa;
+  --neutral: #7d7870;
+  --bad: #de9a66;
+  --med-sage: #8fae98;
+  --med-slate: #93a6ba;
+  --med-sand: #c9b48f;
+  --med-clay: #c99d8b;
+  --med-lavender: #ada3c6;
+  --med-teal: #86b3b2;
+  --habit-0: #6aa3dd;
+  --habit-1: #d58966;
+  --habit-2: #57b38e;
+  --habit-3: #bc89c7;
+  --habit-4: #b39e4c;
+  --habit-5: #9895dd;
+  color-scheme: dark;
+}
+
+/* Forcing Light in Settings overrides a dark OS preference (the base :root values above are already light). */
+:root[data-theme='light'] {
+  color-scheme: light;
 }
 
 @theme inline {
