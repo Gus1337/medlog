@@ -13,6 +13,8 @@ import { Icon } from '../ui/Icon'
 import { Page, ScreenHeader } from '../ui/layout'
 import { Button, EmptyState, SectionTitle } from '../ui/primitives'
 
+const SHOW_HABITS = false
+
 export function TodayScreen() {
   const now = useNow()
   const dayStart = startOfDay(now)
@@ -73,7 +75,8 @@ export function TodayScreen() {
           <Icon name="sparkle" size={24} className="text-accent" />I noticed something
         </button>
 
-        <HabitsSection now={now} />
+        {/* Habit tracking is parked as a draft: code, routes and stored data stay, only this entry point is hidden. */}
+        {SHOW_HABITS && <HabitsSection now={now} />}
 
         <SectionTitle
           action={
