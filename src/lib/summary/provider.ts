@@ -1,10 +1,14 @@
-import type { SummaryAggregates } from './aggregate'
+/** Instructions plus the aggregated log statistics as a user message. */
+export interface SummaryPrompt {
+  system: string
+  user: string
+}
 
 /** Something that turns aggregated log statistics into summary text (Markdown). */
 export interface SummaryProvider {
   readonly id: string
   readonly label: string
-  generate(aggregates: SummaryAggregates, signal?: AbortSignal): Promise<string>
+  generate(prompt: SummaryPrompt, signal?: AbortSignal): Promise<string>
 }
 
 export const PROVIDER_IDS = ['claude', 'openai'] as const

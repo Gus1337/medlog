@@ -1,9 +1,17 @@
 import { db, getSetting, newId, setSetting, deleteSetting } from '../db/db'
-import type { Summary } from '../db/types'
-import { buildAggregates, countEntries, MIN_EFFECT_ENTRIES, type Period, type SummaryScopeInput } from '../lib/summary/aggregate'
+import type { Summary, SummaryKind } from '../db/types'
+import {
+  buildAggregates,
+  buildOverview,
+  countEntries,
+  MIN_EFFECT_ENTRIES,
+  overviewFigures,
+  type Period,
+  type SummaryScopeInput,
+} from '../lib/summary/aggregate'
 import { ClaudeSummaryProvider } from '../lib/summary/claude'
 import { OpenAiSummaryProvider } from '../lib/summary/openai'
-import { notEnoughDataText } from '../lib/summary/prompt'
+import { buildUserMessage, notEnoughDataText, OVERVIEW_SYSTEM_PROMPT, SYSTEM_PROMPT } from '../lib/summary/prompt'
 import { PROVIDER_LABELS, SummaryError, type ProviderId, type SummaryProvider } from '../lib/summary/provider'
 import { DAY } from '../lib/time'
 
@@ -26,10 +34,16 @@ export const scopeKey = (scope: SummaryScopeInput) => (scope.kind === 'overall' 
 export type GenerateResult = { kind: 'saved'; id: string } | { kind: 'not-enough'; text: string }
 
 /**
- * Builds the aggregates for a scope and week, asks the provider for a summary
- * and saves it. Below the minimum number of entries no request is made.
+ * Builds the aggregates for a scope and period (a week, or all time for an
+ * overview), asks the provider for a summary and saves it. Below the minimum
+ * number of entries no request is made.
  */
-export async function generateSummary(scope: SummaryScopeInput, period: Period, signal?: AbortSignal): Promise<GenerateResult> {
+export async function generateSummary(
+  scope: SummaryScopeInput,
+  period: Period,
+  kind: SummaryKind = 'week',
+  signal?: AbortSignal,
+): Promise<GenerateResult> {
   const prevStart = period.start - (period.end - period.start)
   const [medications, effects, doseLogs, doseChanges, checkIns, notes, tags] = await Promise.all([
     db.medications.toArray(),
@@ -47,8 +61,11 @@ export async function generateSummary(scope: SummaryScopeInput, period: Period, 
   const apiKey = await getApiKey(provider)
   if (!apiKey) throw new SummaryError(`Add your ${PROVIDER_LABELS[provider]} API key in Settings first.`)
 
-  const aggregates = buildAggregates({ medications, effects, doseLogs, doseChanges, checkIns, notes, tags }, scope, period)
-  const text = await makeProvider(provider, apiKey).generate(aggregates, signal)
+  const data = { medications, effects, doseLogs, doseChanges, checkIns, notes, tags }
+  const overview = kind === 'overview' ? buildOverview(data, scope, period) : null
+  const aggregates = overview ?? buildAggregates(data, scope, period)
+  const system = overview ? OVERVIEW_SYSTEM_PROMPT : SYSTEM_PROMPT
+  const text = await makeProvider(provider, apiKey).generate({ system, user: buildUserMessage(aggregates) }, signal)
 
   const summary: Summary = {
     id: newId(),
@@ -59,6 +76,8 @@ export async function generateSummary(scope: SummaryScopeInput, period: Period, 
     text,
     entryCount: aggregates.entryCount,
     provider,
+    kind,
+    ...(overview && { overview: overviewFigures(overview) }),
   }
   await db.summaries.add(summary)
   return { kind: 'saved', id: summary.id }

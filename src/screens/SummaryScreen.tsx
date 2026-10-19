@@ -1,10 +1,11 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { scopeLabel } from '../components/SummarySection'
+import { OverviewStats } from '../components/OverviewStats'
+import { summaryRange, summaryTitle } from '../components/SummarySection'
 import { deleteSummary } from '../data/summaries'
 import { useMedications } from '../data/hooks'
 import { db } from '../db/db'
 import { PROVIDER_LABELS } from '../lib/summary/provider'
-import { formatDateTime, formatShortDate } from '../lib/time'
+import { formatDateTime } from '../lib/time'
 import { goBack } from '../router'
 import { useFeedback } from '../ui/feedback'
 import { Page, ScreenHeader } from '../ui/layout'
@@ -30,13 +31,14 @@ export function SummaryScreen({ id }: { id: string }) {
     )
   }
 
-  const title = `${scopeLabel(summary.scope, meds)} summary`
-  const range = `${formatShortDate(summary.periodStart)} – ${formatShortDate(summary.periodEnd - 1)}`
+  const title = summaryTitle(summary, meds)
+  const range = summaryRange(summary)
 
   return (
     <>
       <ScreenHeader title={title} subtitle={range} onBack={back} />
       <Page>
+        {summary.overview && <OverviewStats overview={summary.overview} />}
         <article className="rounded-3xl bg-surface p-6 print:p-0">
           {/* Print header, since the screen header is hidden when printing. */}
           <header className="mb-4 hidden print:block">

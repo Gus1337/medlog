@@ -84,6 +84,21 @@ export interface Summary {
   entryCount: number
   /** Which AI provider wrote it. Absent on summaries written before provider choice existed (Claude). */
   provider?: 'claude' | 'openai'
+  /** Absent on summaries written before overviews existed (a week). */
+  kind?: SummaryKind
+  /** The figures behind an all-time overview, saved with it so the picture matches the text. */
+  overview?: SummaryOverview
+}
+
+/** A week's summary, or an overview of everything logged so far. */
+export type SummaryKind = 'week' | 'overview'
+
+export interface SummaryOverview {
+  feel: Record<Feel, number>
+  /** Most common tags, most first. */
+  tags: { tag: string; count: number; feel: Record<Feel, number> }[]
+  /** Every month in the period, oldest first, "YYYY-MM". */
+  months: { month: string; entries: number; feel: Record<Feel, number> }[]
 }
 
 /** Yes/no habits are done or not; amount habits count something (steps, pages, minutes). */

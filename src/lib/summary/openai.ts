@@ -1,6 +1,4 @@
-import type { SummaryAggregates } from './aggregate'
-import { buildUserMessage, SYSTEM_PROMPT } from './prompt'
-import { SummaryError, type SummaryProvider } from './provider'
+import { SummaryError, type SummaryPrompt, type SummaryProvider } from './provider'
 
 /** OpenAI's flagship model at the time of writing; change here if a newer one supersedes it. */
 export const OPENAI_MODEL_ID = 'gpt-5.1'
@@ -19,7 +17,7 @@ export class OpenAiSummaryProvider implements SummaryProvider {
     this.apiKey = apiKey
   }
 
-  async generate(aggregates: SummaryAggregates, signal?: AbortSignal): Promise<string> {
+  async generate(prompt: SummaryPrompt, signal?: AbortSignal): Promise<string> {
     const { default: OpenAI } = await import('openai')
     const client = new OpenAI({ apiKey: this.apiKey, dangerouslyAllowBrowser: true })
 
@@ -28,8 +26,8 @@ export class OpenAiSummaryProvider implements SummaryProvider {
       response = await client.responses.create(
         {
           model: OPENAI_MODEL_ID,
-          instructions: SYSTEM_PROMPT,
-          input: buildUserMessage(aggregates),
+          instructions: prompt.system,
+          input: prompt.user,
           max_output_tokens: 4000,
         },
         { signal },

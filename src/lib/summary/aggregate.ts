@@ -1,6 +1,6 @@
 // Turns raw entries into the small set of statistics the summary model sees.
 // Everything numeric is computed here so the model only has to describe it.
-import type { CheckIn, DoseChange, DoseLog, EffectEntry, Feel, Medication, Note, Tag } from '../../db/types'
+import type { CheckIn, DoseChange, DoseLog, EffectEntry, Feel, Medication, Note, SummaryOverview, Tag } from '../../db/types'
 import { HOUR, dayKey } from '../time'
 import { indexDoseLogs, sinceDoseForMedication } from '../timeSinceDose'
 
@@ -248,7 +248,7 @@ export function buildAggregates(data: SummaryData, scope: SummaryScopeInput, per
     .map((e) => {
       const h = hoursAfterDose(e)
       return {
-        when: new Date(e.timestamp).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' }),
+        when: new Date(e.timestamp).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
         feel: e.feel,
         tags: e.tagIds.map((id) => tagById.get(id)).filter((n): n is string => !!n),
         medications: e.medicationIds.length ? e.medicationIds.map((id) => medById.get(id)?.name ?? 'unknown') : ['not sure'],
@@ -283,5 +283,78 @@ export function buildAggregates(data: SummaryData, scope: SummaryScopeInput, per
     doses,
     checkIns: { count: ciNow.length, averages: avg(ciNow), previousAverages: avg(ciPrev) },
     samples: { effects: effectSamples, notes: noteSamples },
+  }
+}
+
+export interface MonthStats {
+  /** "YYYY-MM". */
+  month: string
+  entries: number
+  feel: FeelCounts
+  topTags: string[]
+}
+
+/** All-time figures: nothing earlier to compare with, so a month-by-month line instead of the previous period. */
+export interface OverviewAggregates
+  extends Omit<SummaryAggregates, 'previousPeriod' | 'previousEntryCount' | 'previousFeel' | 'tags' | 'doses' | 'checkIns'> {
+  tags: Omit<SummaryAggregates['tags'][number], 'previousCount'>[]
+  doses: Omit<SummaryAggregates['doses'][number], 'previousTaken' | 'previousSkipped'>[]
+  checkIns: Omit<SummaryAggregates['checkIns'], 'previousAverages'>
+  byMonth: MonthStats[]
+}
+
+/** Every month touching the period, oldest first, as "YYYY-MM". */
+export function monthsIn(period: Period): string[] {
+  const d = new Date(period.start)
+  d.setDate(1)
+  const last = dayKey(period.end - 1).slice(0, 7)
+  const months: string[] = []
+  for (let key = dayKey(d.getTime()).slice(0, 7); key <= last; key = dayKey(d.getTime()).slice(0, 7)) {
+    months.push(key)
+    d.setMonth(d.getMonth() + 1)
+  }
+  return months
+}
+
+export function buildOverview(data: SummaryData, scope: SummaryScopeInput, period: Period): OverviewAggregates {
+  const { previousPeriod, previousEntryCount, previousFeel, tags, doses, checkIns, ...rest } = buildAggregates(data, scope, period)
+  const tagById = new Map(data.tags.map((t) => [t.id, t.name]))
+
+  const months = new Map(monthsIn(period).map((m) => [m, { entries: 0, feel: emptyFeel(), tags: new Map<string, number>() }]))
+  for (const e of data.effects) {
+    if (!inPeriod(e.timestamp, period) || !inScope(e, scope)) continue
+    const m = months.get(dayKey(e.timestamp).slice(0, 7))
+    if (!m) continue
+    m.entries++
+    m.feel[e.feel]++
+    for (const id of e.tagIds) {
+      const name = tagById.get(id)
+      if (name) m.tags.set(name, (m.tags.get(name) ?? 0) + 1)
+    }
+  }
+
+  return {
+    ...rest,
+    tags: tags.map(({ previousCount, ...t }) => t),
+    doses: doses.map(({ previousTaken, previousSkipped, ...d }) => d),
+    checkIns: { count: checkIns.count, averages: checkIns.averages },
+    byMonth: [...months.entries()].map(([month, m]) => ({
+      month,
+      entries: m.entries,
+      feel: m.feel,
+      topTags: [...m.tags.entries()]
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .slice(0, 3)
+        .map(([tag]) => tag),
+    })),
+  }
+}
+
+/** The part of an overview that is shown as a picture next to the text. */
+export function overviewFigures(agg: OverviewAggregates): SummaryOverview {
+  return {
+    feel: agg.feel,
+    tags: agg.tags.map(({ tag, count, feel }) => ({ tag, count, feel })),
+    months: agg.byMonth.map(({ month, entries, feel }) => ({ month, entries, feel })),
   }
 }

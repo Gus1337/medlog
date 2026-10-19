@@ -1,6 +1,4 @@
-import type { SummaryAggregates } from './aggregate'
-import { buildUserMessage, SYSTEM_PROMPT } from './prompt'
-import { SummaryError, type SummaryProvider } from './provider'
+import { SummaryError, type SummaryPrompt, type SummaryProvider } from './provider'
 
 /** Anthropic's recommended default model (checked against the models overview, October 2026). */
 export const CLAUDE_MODEL_ID = 'claude-opus-5-5'
@@ -19,7 +17,7 @@ export class ClaudeSummaryProvider implements SummaryProvider {
     this.apiKey = apiKey
   }
 
-  async generate(aggregates: SummaryAggregates, signal?: AbortSignal): Promise<string> {
+  async generate(prompt: SummaryPrompt, signal?: AbortSignal): Promise<string> {
     const { default: Anthropic } = await import('@anthropic-ai/sdk')
     const client = new Anthropic({ apiKey: this.apiKey, dangerouslyAllowBrowser: true })
 
@@ -34,8 +32,8 @@ export class ClaudeSummaryProvider implements SummaryProvider {
           // If a safety classifier declines, the API retries on a suitable model instead of failing.
           betas: ['server-side-fallback-2026-07-01'],
           fallbacks: 'default',
-          system: SYSTEM_PROMPT,
-          messages: [{ role: 'user', content: buildUserMessage(aggregates) }],
+          system: prompt.system,
+          messages: [{ role: 'user', content: prompt.user }],
         },
         { signal },
       )

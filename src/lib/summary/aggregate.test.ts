@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { generateSampleData } from '../../dev/sampleData'
 import type { CheckIn, DoseChange, DoseLog, EffectEntry, Feel, Medication, Note, Tag } from '../../db/types'
 import { DAY, HOUR } from '../time'
-import { buildAggregates, countEntries, previousPeriod, quantile, timing, type SummaryData } from './aggregate'
-import { buildUserMessage, notEnoughDataText, SUMMARY_HEADINGS, SYSTEM_PROMPT } from './prompt'
+import { buildAggregates, buildOverview, countEntries, monthsIn, overviewFigures, previousPeriod, quantile, timing, type SummaryData } from './aggregate'
+import { buildUserMessage, notEnoughDataText, OVERVIEW_HEADINGS, OVERVIEW_SYSTEM_PROMPT, SUMMARY_HEADINGS, SYSTEM_PROMPT } from './prompt'
 
 const START = new Date(2026, 9, 5).getTime() // Monday
 const period = { start: START, end: START + 7 * DAY }
@@ -153,6 +153,36 @@ describe('buildAggregates (one medication)', () => {
   })
 })
 
+describe('buildOverview (all time)', () => {
+  const data = fixture()
+  // From the first entry (the week before START) to the end of October.
+  const allTime = { start: START - 7 * DAY, end: new Date(2026, 10, 1).getTime() }
+  const agg = buildOverview(data, { kind: 'medication', medicationId: 'a' }, allTime)
+
+  it('counts every entry for the medication, with no previous period', () => {
+    // 3 the week before + 12 linked to Alpha alone + 1 linked to both
+    expect(agg.entryCount).toBe(16)
+    expect(agg).not.toHaveProperty('previousEntryCount')
+    expect(agg.tags[0]).not.toHaveProperty('previousCount')
+    expect(agg.doses[0]).not.toHaveProperty('previousTaken')
+  })
+
+  it('splits entries by month, including empty ones', () => {
+    expect(monthsIn({ start: new Date(2026, 7, 20).getTime(), end: new Date(2026, 9, 2).getTime() })).toEqual(['2026-08', '2026-09', '2026-10'])
+    expect(agg.byMonth.map((m) => m.month)).toEqual(['2026-09', '2026-10'])
+    // Only 29 Sep falls in September.
+    expect(agg.byMonth[0]).toMatchObject({ entries: 1, feel: { good: 1, neutral: 0, bad: 0 }, topTags: ['focused'] })
+    expect(agg.byMonth[1].entries).toBe(15)
+  })
+
+  it('keeps the figures shown next to the text', () => {
+    const figures = overviewFigures(agg)
+    expect(figures.feel).toEqual(agg.feel)
+    expect(figures.months).toHaveLength(2)
+    expect(figures.tags[0]).toEqual({ tag: agg.tags[0].tag, count: agg.tags[0].count, feel: agg.tags[0].feel })
+  })
+})
+
 describe('input size', () => {
   it('stays small for a busy week of real-looking data', () => {
     const sample = generateSampleData(new Date(2026, 9, 10, 20).getTime())
@@ -172,6 +202,13 @@ describe('prompt', () => {
     expect(SYSTEM_PROMPT).toMatch(/how many effect entries/i)
     expect(SYSTEM_PROMPT).toMatch(/cannot tell which medication/i)
     expect(SYSTEM_PROMPT).toMatch(/below 5/)
+  })
+
+  it('gives the all-time overview the same rules and its own headings', () => {
+    for (const h of OVERVIEW_HEADINGS) expect(OVERVIEW_SYSTEM_PROMPT).toContain(`## ${h}`)
+    expect(OVERVIEW_SYSTEM_PROMPT).toMatch(/never give dosing advice or medical advice/i)
+    expect(OVERVIEW_SYSTEM_PROMPT).toMatch(/cannot tell which medication/i)
+    expect(OVERVIEW_SYSTEM_PROMPT).toMatch(/byMonth/)
   })
 
   it('explains when there is not enough data', () => {
