@@ -30,10 +30,10 @@ export async function setArchived(id: string, isArchived: boolean) {
   await db.medications.update(id, { isArchived })
 }
 
-/** Logs a dose of the medication's usual amount. Returns the new log's id. */
-export async function logDose(med: Medication, status: DoseStatus, timestamp = Date.now()): Promise<string> {
+/** Logs a dose with the amount picked at the time. Skipped doses keep the usual amount. Returns the new log's id. */
+export async function logDose(med: Medication, status: DoseStatus, amount = med.doseAmount, timestamp = Date.now()): Promise<string> {
   const id = newId()
-  await db.doseLogs.add({ id, medicationId: med.id, timestamp, amount: med.doseAmount, unit: med.unit, status })
+  await db.doseLogs.add({ id, medicationId: med.id, timestamp, amount, unit: med.unit, status })
   return id
 }
 

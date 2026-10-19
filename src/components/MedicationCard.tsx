@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { deleteDoseLog, logDose } from '../data/medications'
 import type { DoseLog, Medication } from '../db/types'
 import { formatTime } from '../lib/time'
@@ -5,8 +6,9 @@ import { medColour } from '../ui/colours'
 import { useFeedback } from '../ui/feedback'
 import { Icon } from '../ui/Icon'
 import { Button } from '../ui/primitives'
+import { DoseLogSheet } from './DoseLogSheet'
 
-/** Today card for one medication: one tap on "Taken" logs the usual dose now. */
+/** Today card for one medication: "Taken" asks for the dose taken, "Skip" logs a skipped dose. */
 export function MedicationCard({
   medication,
   todayLogs,
@@ -17,15 +19,13 @@ export function MedicationCard({
   onEditLog: (log: DoseLog) => void
 }) {
   const { toast } = useFeedback()
+  const [logging, setLogging] = useState(false)
   const expected = Math.max(1, medication.usualTimes.length)
   const done = todayLogs.length >= expected
 
-  const log = async (status: DoseLog['status']) => {
-    const id = await logDose(medication, status)
-    toast(status === 'taken' ? `${medication.name} taken at ${formatTime(Date.now())}` : `${medication.name} marked as skipped`, {
-      label: 'Undo',
-      onClick: () => deleteDoseLog(id),
-    })
+  const skip = async () => {
+    const id = await logDose(medication, 'skipped')
+    toast(`${medication.name} marked as skipped`, { label: 'Undo', onClick: () => deleteDoseLog(id) })
   }
 
   return (
@@ -34,10 +34,7 @@ export function MedicationCard({
         <span className="mt-1.5 h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: medColour(medication.colour) }} />
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-lg font-semibold">{medication.name}</h3>
-          <p className="text-[15px] text-muted">
-            {medication.doseAmount} {medication.unit}
-            {medication.usualTimes.length > 0 && ` · usually ${medication.usualTimes.join(', ')}`}
-          </p>
+          {medication.usualTimes.length > 0 && <p className="text-[15px] text-muted">usually {medication.usualTimes.join(', ')}</p>}
         </div>
       </div>
 
@@ -60,15 +57,17 @@ export function MedicationCard({
       )}
 
       <div className="mt-4 flex gap-2">
-        <Button variant={done ? 'soft' : 'primary'} icon="check" className="flex-1" onClick={() => log('taken')}>
+        <Button variant={done ? 'soft' : 'primary'} icon="check" className="flex-1" onClick={() => setLogging(true)}>
           {done ? 'Taken again' : 'Taken'}
         </Button>
         {!done && (
-          <Button variant="soft" onClick={() => log('skipped')}>
+          <Button variant="soft" onClick={skip}>
             Skip
           </Button>
         )}
       </div>
+
+      {logging && <DoseLogSheet medication={medication} onClose={() => setLogging(false)} />}
     </article>
   )
 }
